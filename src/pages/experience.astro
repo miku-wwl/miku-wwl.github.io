@@ -90,7 +90,7 @@ const education = [
 				))}
 			</section>
 
-			<section class="section">
+			<section class="section education-section">
 				<p class="eyebrow">~/education $ cat degrees.txt</p>
 				<ul class="education-list">
 					{education.map((item) => <li>{item}</li>)}
@@ -159,6 +159,11 @@ const education = [
 	.role-time { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
 	.role-highlights { margin: 0.4rem 0 0; padding-left: 1.2em; }
 	.role-highlights li { margin: 0.25em 0; }
+	.education-section {
+		max-width: 900px;
+		margin: 1.5rem auto 0;
+		padding-left: calc(20px + 1rem);
+	}
 	.education-list {
 		margin: 0;
 		padding-left: 1.2rem;
