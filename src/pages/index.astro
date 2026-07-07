@@ -12,6 +12,8 @@ const posts = (await getCollection('blog'))
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.slice(0, 4);
 
+const terraformTrackUrl = 'https://github.com/miku-wwl/Terraform-Authoring-and-Operations-Professional-Track';
+
 const skills = [
 	{ group: 'Backend', items: ['Java', 'Spring Boot', 'Spring Cloud', 'Node.js', '.NET 10', 'REST APIs'] },
 	{ group: 'Distributed Systems', items: ['Microservices', 'Thrift IDL', 'Message queues', 'Aeron Archive', 'Tracing'] },
@@ -46,6 +48,17 @@ const skills = [
 						<li>Interested in backend, cloud-native, SRE, and platform engineering roles where reliability matters.</li>
 					</ul>
 
+					<div class="learning-track">
+						<p class="learning-command mono">~/learning $ terraform professional-track --active</p>
+						<p>
+							Currently working intensively through the Terraform Authoring and Operations Professional Track,
+							building hands-on IaC labs around modules, validation, testing, backends, policy, security, and operational workflows.
+						</p>
+						<a class="repo-link mono" href={terraformTrackUrl} target="_blank" rel="noreferrer">
+							github.com/miku-wwl/Terraform-Authoring-and-Operations-Professional-Track
+						</a>
+					</div>
+
 					<div class="hero-mvp">
 						<MvpBadge variant="block" />
 					</div>
@@ -53,6 +66,7 @@ const skills = [
 					<div class="hero-actions">
 						<a class="btn primary" href="/projects">projects →</a>
 						<a class="btn" href="/experience">experience</a>
+						<a class="btn" href={terraformTrackUrl} target="_blank" rel="noreferrer">terraform track ↗</a>
 					</div>
 				</TerminalWindow>
 			</section>
@@ -127,6 +141,24 @@ const skills = [
 		color: var(--prompt);
 		font-family: var(--font-mono);
 		font-weight: 700;
+	}
+	.learning-track {
+		max-width: 72ch;
+		margin: 1rem 0 0;
+		padding-left: 1rem;
+		border-left: 2px solid var(--prompt);
+		color: var(--text-muted);
+	}
+	.learning-track p { margin-bottom: 0.45rem; }
+	.learning-command {
+		color: var(--prompt);
+		font-size: 0.85rem;
+	}
+	.repo-link {
+		display: inline-block;
+		max-width: 100%;
+		overflow-wrap: anywhere;
+		font-size: 0.82rem;
 	}
 	.hero-mvp { margin: 1.25rem 0 1.5rem; }
 	.hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }

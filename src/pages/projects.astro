@@ -7,7 +7,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 const projects = [
 	{
 		title: 'Cloud Governance X',
-		status: 'Ongoing | Active development',
+		status: 'Active development',
+		statusKind: 'active',
 		stack: '.NET 10, PostgreSQL, Terraform, GitHub Actions, Docker, Azure SDK, Azure Resource Graph, Azure Cost Management',
 		details: [
 			'Building a cloud governance and FinOps platform for cloud resource inventory, cost visibility, ETL execution tracking, and production-oriented backend engineering.',
@@ -15,6 +16,19 @@ const projects = [
 			'Built Azure resource inventory and cost ingestion foundations using Azure SDK, Azure Resource Graph, Azure Cost Management Query API, PostgreSQL repositories, and ETL job tracking.',
 			'Designed PostgreSQL persistence for cloud resources, daily cost records, ETL job runs, provider accounts, tenant-aware data access, and governance metadata.',
 			'Established quality controls including architecture boundary tests, repository static checks, migration verification, GitHub Actions CI, and Terraform validation.',
+		],
+	},
+	{
+		title: 'Cross-Cloud Kubernetes Node Lifecycle and SRE Failure Modeling Lab',
+		status: 'Planned',
+		statusKind: 'planned',
+		stack: 'Packer, Terraform, AKS, EKS, GitHub Actions, Go, Trivy, Goss, Azure Monitor, CloudWatch, Prometheus, Grafana, Azure Chaos Studio, Chaos Mesh',
+		details: [
+			'Planning a production-inspired AKS/EKS reliability lab focused on Kubernetes node lifecycle management, immutable infrastructure, rollout governance, drift detection, and SRE failure modeling.',
+			'Planned EKS track covers custom AMI lifecycle with Packer, Launch Templates, Managed Node Groups, Trivy vulnerability scanning, Goss baseline validation, pinned image versions, and rollback paths.',
+			'Planned AKS track focuses on supported node image governance, node pool upgrade workflows, custom node configuration, DaemonSet baseline checks, drift detection, and Azure Monitor observability.',
+			'Failure Modeling Library will cover image release failures, CIS hardening side effects, Terraform CI state drift, CNI/runtime failures, resource exhaustion, DNS/network partitions, and long-term version drift.',
+			'Chaos validation plan includes Azure Chaos Studio, Chaos Mesh, Prometheus/Grafana signal validation, RCA reports, recovery playbooks, and preventive controls.',
 		],
 	},
 ];
@@ -39,7 +53,7 @@ const projects = [
 							<header class="project-head">
 								<div>
 									<h2>{project.title}</h2>
-									<p class="mono status">{project.status}</p>
+									<p class={`mono status ${project.statusKind}`}>{project.status}</p>
 								</div>
 							</header>
 							<p class="stack"><strong>Stack:</strong> {project.stack}</p>
@@ -78,7 +92,18 @@ const projects = [
 		gap: 1rem;
 		margin-bottom: 0.7rem;
 	}
-	.status { color: var(--prompt); margin: 0.2rem 0 0; font-size: 0.85rem; }
+	.status {
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		padding: 0.16rem 0.5rem;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		margin: 0.2rem 0 0;
+		font-size: 0.78rem;
+	}
+	.status.active { color: var(--prompt); background: var(--award-soft); }
+	.status.planned { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 14%, transparent); }
 	.stack { color: var(--text-muted); margin: 0 0 0.75rem; }
 	.project-card ul { margin: 0; padding-left: 1.2rem; }
 	.project-card li li { margin: 0.3rem 0; }
