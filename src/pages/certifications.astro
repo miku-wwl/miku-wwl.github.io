@@ -9,36 +9,31 @@ const certs = [
 	{
 		name: 'Microsoft Certified: Azure Solutions Architect Expert',
 		issuer: 'Microsoft Learn',
-		icon: 'AZ',
-		tone: 'azure',
+		image: '/certifications/azure-solutions-architect-expert.png',
 		href: 'https://learn.microsoft.com/en-us/users/weilaiwang-7477/credentials/3b9265225e0641d',
 	},
 	{
 		name: 'AWS Certified Solutions Architect - Professional',
 		issuer: 'Amazon Web Services',
-		icon: 'AWS',
-		tone: 'aws',
+		image: '/certifications/aws-solutions-architect-professional.png',
 		href: 'https://www.credly.com/badges/00a8748b-01ea-41bf-bb21-54fa628be79e/linked_in_profile',
 	},
 	{
 		name: 'Microsoft Certified: Azure Administrator Associate',
 		issuer: 'Microsoft Learn',
-		icon: 'AZ',
-		tone: 'azure',
+		image: '/certifications/azure-administrator-associate.png',
 		href: 'https://learn.microsoft.com/en-us/users/weilaiwang-7477/credentials/5d434fa19a5220b7',
 	},
 	{
 		name: 'AWS Certified Developer - Associate',
 		issuer: 'Amazon Web Services',
-		icon: 'AWS',
-		tone: 'aws',
+		image: '/certifications/aws-developer-associate.png',
 		href: 'https://www.credly.com/badges/2dfaf594-6b11-4d74-bee7-d3d1dfd30a78/public_url',
 	},
 	{
 		name: 'Certified Kubernetes Application Developer',
 		issuer: 'The Linux Foundation / CNCF',
-		icon: 'K8S',
-		tone: 'k8s',
+		image: '/certifications/ckad.png',
 		href: 'https://www.credly.com/badges/05fc9907-a20d-4bfe-b341-f8ca8e81b5a0/public_url',
 	},
 ];
@@ -69,7 +64,9 @@ const certs = [
 					{certs.map((cert) => (
 						<li>
 							<a class="cert" href={cert.href} target="_blank" rel="noopener noreferrer">
-								<span class={`cert-mark ${cert.tone}`} aria-hidden="true">{cert.icon}</span>
+								<span class="cert-badge">
+									<img src={cert.image} alt="" loading="lazy" />
+								</span>
 								<span class="cert-copy">
 									<strong>{cert.name}</strong>
 									<span class="issuer mono">{cert.issuer}</span>
@@ -99,7 +96,7 @@ const certs = [
 	.cert {
 		min-height: 92px;
 		display: grid;
-		grid-template-columns: 52px 1fr auto;
+		grid-template-columns: 56px 1fr auto;
 		align-items: center;
 		gap: 0.9rem;
 		padding: 0.95rem 1rem;
@@ -117,32 +114,21 @@ const certs = [
 		box-shadow: var(--glow);
 		text-decoration: none;
 	}
-	.cert-mark {
+	.cert-badge {
 		display: grid;
 		place-items: center;
-		width: 52px;
-		height: 52px;
-		border-radius: 14px;
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius);
+		background: var(--surface-2);
 		border: 1px solid var(--border);
-		font-family: var(--font-mono);
-		font-size: 0.9rem;
-		font-weight: 800;
-		letter-spacing: 0;
+		overflow: hidden;
 	}
-	.cert-mark.aws {
-		color: #111827;
-		background: linear-gradient(135deg, #ff9900, #ffd36a);
-		border-color: rgba(255, 153, 0, 0.45);
-	}
-	.cert-mark.azure {
-		color: #ffffff;
-		background: linear-gradient(135deg, #0078d4, #50b4ff);
-		border-color: rgba(0, 120, 212, 0.45);
-	}
-	.cert-mark.k8s {
-		color: #ffffff;
-		background: linear-gradient(135deg, #326ce5, #5ad0ff);
-		border-color: rgba(50, 108, 229, 0.45);
+	.cert-badge img {
+		width: 48px;
+		height: 48px;
+		object-fit: contain;
+		border-radius: 0;
 	}
 	.cert-copy {
 		display: flex;
