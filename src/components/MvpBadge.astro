@@ -31,8 +31,8 @@ const { variant = 'inline', label = AWARD_LABEL } = Astro.props;
 		align-items: center;
 		gap: 0.85rem;
 		padding: 0.7rem 1rem;
-		background: var(--mvp-soft);
-		border: 1px solid var(--mvp);
+		background: var(--award-soft);
+		border: 1px solid var(--award);
 		border-radius: var(--radius);
 		color: var(--text);
 		text-decoration: none;
@@ -41,7 +41,7 @@ const { variant = 'inline', label = AWARD_LABEL } = Astro.props;
 	}
 	.award-block:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 0 0 1px var(--mvp), 0 0 24px var(--mvp-soft);
+		box-shadow: 0 0 0 1px var(--award), 0 0 24px var(--award-soft);
 		text-decoration: none;
 	}
 	.award-glyph {
@@ -50,13 +50,13 @@ const { variant = 'inline', label = AWARD_LABEL } = Astro.props;
 		width: 2rem;
 		height: 2rem;
 		border-radius: 999px;
-		background: var(--mvp);
+		background: var(--award);
 		color: var(--bg);
 		font-size: 1rem;
 	}
 	.award-text { display: flex; flex-direction: column; line-height: 1.2; }
-	.award-title { font-weight: 700; color: var(--mvp); }
+	.award-title { font-weight: 700; color: var(--award); }
 	.award-sub { font-size: 0.78rem; color: var(--text-muted); }
-	.award-arrow { color: var(--mvp); transition: transform 120ms ease; }
+	.award-arrow { color: var(--award); transition: transform 120ms ease; }
 	.award-block:hover .award-arrow { transform: translateX(3px); }
 </style>

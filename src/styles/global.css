@@ -21,8 +21,8 @@
 	--magenta: #d2a8ff;
 	--yellow: #f7c948;
 	--orange: #ff9b6e;
-	--mvp: #ff5b3a;
-	--mvp-soft: rgba(255, 91, 58, 0.16);
+	--award: #3fb950;
+	--award-soft: rgba(63, 185, 80, 0.16);
 	--selection: rgba(63, 185, 80, 0.32);
 	--shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.55);
 	--shadow-2: 0 1px 0 rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.65);
@@ -60,8 +60,8 @@
 	--magenta: #8250df;
 	--yellow: #9a6700;
 	--orange: #bc4c00;
-	--mvp: #bf3917;
-	--mvp-soft: rgba(191, 57, 23, 0.12);
+	--award: #1a7f37;
+	--award-soft: rgba(26, 127, 55, 0.12);
 	--selection: rgba(26, 127, 55, 0.22);
 	--shadow-1: 0 1px 0 rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.08);
 	--shadow-2: 0 2px 0 rgba(15, 23, 42, 0.05), 0 18px 36px rgba(15, 23, 42, 0.12);
@@ -358,10 +358,11 @@ input, textarea, button, select {
 	border: 1px solid var(--border);
 	border-radius: 999px;
 }
-.chip.mvp {
-	color: var(--mvp);
-	background: var(--mvp-soft);
-	border-color: var(--mvp);
+.chip.mvp,
+.chip.award {
+	color: var(--award);
+	background: var(--award-soft);
+	border-color: var(--award);
 }
 .chip .dot {
 	width: 6px;
