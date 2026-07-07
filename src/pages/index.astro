@@ -36,10 +36,15 @@ const skills = [
 					<h1 class="hero-name">Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
 					<p class="hero-tagline mono">{SITE_TAGLINE}</p>
 					<p class="hero-bio">
-						Auckland-based Master of Software Engineering student with 4+ years of professional software engineering
-						experience, including four years at Huawei and backend internship experience at OKX. I focus on backend
-						systems, platform engineering, cloud-native infrastructure, production debugging, and reliable delivery.
+						I am an Auckland-based software engineer with 4.5 years of professional experience at Huawei,
+						focused on backend systems, distributed services, Kubernetes-based applications, and cloud-native
+						engineering.
 					</p>
+					<ul class="hero-points">
+						<li>Java/Spring Boot microservices, Kubernetes deployments, service contracts, and production troubleshooting.</li>
+						<li>AWS, Azure, Terraform, CI/CD, observability, root-cause analysis, and platform reliability.</li>
+						<li>Interested in backend, cloud-native, SRE, and platform engineering roles where reliability matters.</li>
+					</ul>
 
 					<div class="hero-mvp">
 						<MvpBadge variant="block" />
@@ -96,8 +101,35 @@ const skills = [
 		margin: 0.2rem 0 0.4rem;
 		font-size: clamp(2rem, 3vw + 1rem, 3rem);
 	}
-	.hero-tagline { color: var(--text-muted); margin: 0 0 1rem; }
-	.hero-bio { max-width: 68ch; }
+	.hero-tagline {
+		max-width: 72ch;
+		color: var(--prompt);
+		margin: 0 0 1rem;
+		font-size: clamp(0.9rem, 0.7vw + 0.72rem, 1.05rem);
+		line-height: 1.55;
+	}
+	.hero-bio { max-width: 70ch; font-size: 1.04rem; }
+	.hero-points {
+		max-width: 72ch;
+		margin: 0.85rem 0 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.45rem;
+	}
+	.hero-points li {
+		position: relative;
+		padding-left: 1.3rem;
+		color: var(--text-muted);
+	}
+	.hero-points li::before {
+		content: '✓';
+		position: absolute;
+		left: 0;
+		color: var(--prompt);
+		font-family: var(--font-mono);
+		font-weight: 700;
+	}
 	.hero-mvp { margin: 1.25rem 0 1.5rem; }
 	.hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 
