@@ -7,7 +7,7 @@ export const SITE_AUTHOR = 'Weilai Wang';
 export const SITE_TAGLINE =
 	'Senior Software Engineer | Backend & Cloud Native | Azure Solutions Architect Expert | AWS Solutions Architect Professional | Kubernetes (CKAD)';
 
-export const AWARD_URL = '/assets/Weilai_Wang_Resume.pdf';
+export const AWARD_URL = '/certifications/';
 export const AWARD_LABEL = 'Linux Foundation LiFT Scholar';
 
 export const SOCIAL_LINKS = [
