@@ -1,0 +1,86 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import MvpBadge from '../components/MvpBadge.astro';
+import { SITE_TITLE } from '../consts';
+
+const certs = [
+	'AWS Certified Solutions Architect - Professional',
+	'Microsoft Certified: Azure Solutions Architect Expert',
+	'Certified Kubernetes Application Developer',
+	'AWS Certified Developer - Associate',
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Certifications | ${SITE_TITLE}`} description="Certifications and recognition held by Weilai Wang." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="section">
+				<p class="eyebrow">~/certifications $ ls -1</p>
+				<h1>Certifications &amp; recognition</h1>
+				<p class="muted">Cloud architecture, Kubernetes application development, and platform engineering foundations.</p>
+			</section>
+
+			<section class="section">
+				<p class="eyebrow">~/awards $ cat ./lift-scholarship.txt</p>
+				<MvpBadge variant="block" />
+			</section>
+
+			<section class="section">
+				<p class="eyebrow">~/certifications $ tree</p>
+				<ul class="cert-grid">
+					{certs.map((cert) => (
+						<li class="cert">
+							<span class="cert-mark" aria-hidden="true">✓</span>
+							<strong>{cert}</strong>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.cert-grid {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.85rem;
+	}
+	@media (max-width: 640px) { .cert-grid { grid-template-columns: 1fr; } }
+
+	.cert {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.85rem 0.95rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		transition: border-color 120ms ease, transform 120ms ease;
+	}
+	.cert:hover { border-color: var(--accent); transform: translateY(-1px); }
+	.cert-mark {
+		display: grid;
+		place-items: center;
+		flex: 0 0 auto;
+		width: 32px;
+		height: 32px;
+		border-radius: var(--radius-sm);
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		color: var(--prompt);
+		font-family: var(--font-mono);
+	}
+	.cert strong { display: block; line-height: 1.25; }
+</style>

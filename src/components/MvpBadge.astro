@@ -1,0 +1,62 @@
+---
+import { AWARD_URL, AWARD_LABEL } from '../consts';
+
+interface Props {
+	variant?: 'inline' | 'block';
+	label?: string;
+}
+
+const { variant = 'inline', label = AWARD_LABEL } = Astro.props;
+---
+
+{variant === 'inline' ? (
+	<a class="chip award" href={AWARD_URL} title="View resume">
+		<span class="dot" aria-hidden="true"></span>
+		{label}
+	</a>
+) : (
+	<a class="award-block" href={AWARD_URL}>
+		<span class="award-glyph" aria-hidden="true">★</span>
+		<span class="award-text">
+			<span class="award-title">Linux Foundation LiFT Scholarship</span>
+			<span class="award-sub">Systems &amp; DevOps · Spring 2026 awardee</span>
+		</span>
+		<span class="award-arrow" aria-hidden="true">→</span>
+	</a>
+)}
+
+<style>
+	.award-block {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.7rem 1rem;
+		background: var(--mvp-soft);
+		border: 1px solid var(--mvp);
+		border-radius: var(--radius);
+		color: var(--text);
+		text-decoration: none;
+		font-family: var(--font-mono);
+		transition: transform 120ms ease, box-shadow 120ms ease;
+	}
+	.award-block:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 0 0 1px var(--mvp), 0 0 24px var(--mvp-soft);
+		text-decoration: none;
+	}
+	.award-glyph {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		background: var(--mvp);
+		color: var(--bg);
+		font-size: 1rem;
+	}
+	.award-text { display: flex; flex-direction: column; line-height: 1.2; }
+	.award-title { font-weight: 700; color: var(--mvp); }
+	.award-sub { font-size: 0.78rem; color: var(--text-muted); }
+	.award-arrow { color: var(--mvp); transition: transform 120ms ease; }
+	.award-block:hover .award-arrow { transform: translateX(3px); }
+</style>

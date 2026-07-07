@@ -1,0 +1,80 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import TerminalWindow from '../components/TerminalWindow.astro';
+import MvpBadge from '../components/MvpBadge.astro';
+import { SITE_TITLE, SOCIAL_LINKS } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`About | ${SITE_TITLE}`} description="About Weilai Wang — backend and platform engineer based in Auckland, New Zealand." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="section">
+				<p class="eyebrow">~/about.md $ cat ./bio</p>
+				<TerminalWindow title="about.md">
+					<h1>About me</h1>
+					<p>
+						I'm Weilai, an Auckland-based software engineer currently completing a Master of Software Engineering
+						at Yoobee College of Creative Innovation, expected to graduate in April 2027.
+					</p>
+					<p>
+						My professional background includes four years at Huawei building backend services for cluster network
+						management systems, plus backend internship experience at OKX in a core matching system team. I enjoy
+						work that sits close to production reality: distributed services, cloud infrastructure, CI/CD, observability,
+						root-cause analysis, and pragmatic engineering delivery.
+					</p>
+					<p>
+						Right now I am deepening my platform engineering practice across Terraform, AWS, Azure, Kubernetes,
+						GitHub Actions, Argo CD, Argo Rollouts, and production-style automation. My active project, Cloud Governance X,
+						focuses on cloud resource inventory, cost visibility, ETL tracking, PostgreSQL persistence, and repeatable
+						infrastructure workflows.
+					</p>
+
+					<div class="mvp-block-wrap">
+						<MvpBadge variant="block" />
+					</div>
+				</TerminalWindow>
+			</section>
+
+			<section class="section">
+				<p class="eyebrow">~/about $ ls ./contact</p>
+				<TerminalWindow title="contact">
+					<ul class="contact-list">
+						{SOCIAL_LINKS.map((s) => (
+							<li>
+								<span class="key mono">{s.label.toLowerCase()}</span>
+								<a href={s.href} target={s.icon === 'mail' ? undefined : '_blank'} rel="noopener noreferrer">{s.handle}</a>
+							</li>
+						))}
+						<li>
+							<span class="key mono">phone</span>
+							<a href="tel:+642902748387">(+64) 29 027 48387</a>
+						</li>
+					</ul>
+				</TerminalWindow>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.mvp-block-wrap { margin: 1.25rem 0 0.25rem; }
+	.contact-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.5rem 1.25rem;
+		font-family: var(--font-mono);
+	}
+	.contact-list .key { color: var(--prompt); }
+	.contact-list .key::after { content: ':'; color: var(--text-muted); margin-left: 0.1rem; }
+</style>

@@ -1,0 +1,168 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import TerminalWindow from '../components/TerminalWindow.astro';
+import MvpBadge from '../components/MvpBadge.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE_TITLE, SITE_DESCRIPTION, SITE_TAGLINE } from '../consts';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 4);
+
+const skills = [
+	{ group: 'Backend', items: ['Java', 'Spring Boot', 'Spring Cloud', 'Node.js', '.NET 10', 'REST APIs'] },
+	{ group: 'Distributed Systems', items: ['Microservices', 'Thrift IDL', 'Message queues', 'Aeron Archive', 'Tracing'] },
+	{ group: 'Platform', items: ['Terraform', 'Docker', 'Kubernetes', 'Kustomize', 'GitHub Actions', 'CI/CD'] },
+	{ group: 'Cloud', items: ['AWS', 'Azure', 'AKS', 'Azure Monitor', 'CloudWatch', 'Cost Management'] },
+	{ group: 'Data', items: ['PostgreSQL', 'MySQL', 'Redis', 'SQL', 'Azure Resource Graph'] },
+	{ group: 'Frontend', items: ['TypeScript', 'React'] },
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="hero">
+				<TerminalWindow title="weilai@auckland:~">
+					<p class="hero-line"><span class="prompt">whoami</span></p>
+					<h1 class="hero-name">Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
+					<p class="hero-tagline mono">{SITE_TAGLINE}</p>
+					<p class="hero-bio">
+						Auckland-based Master of Software Engineering student with 4+ years of professional software engineering
+						experience, including four years at Huawei and backend internship experience at OKX. I focus on backend
+						systems, platform engineering, cloud-native infrastructure, production debugging, and reliable delivery.
+					</p>
+
+					<div class="hero-mvp">
+						<MvpBadge variant="block" />
+					</div>
+
+					<div class="hero-actions">
+						<a class="btn primary" href="/assets/Weilai_Wang_Resume.pdf">download resume →</a>
+						<a class="btn" href="/projects">projects</a>
+						<a class="btn" href="/experience">experience</a>
+						<a class="btn" href="/assets/Weilai_Wang_Cover_Letter.pdf">cover letter</a>
+					</div>
+				</TerminalWindow>
+			</section>
+
+			<section class="section">
+				<p class="eyebrow">~/ $ cat stack.txt</p>
+				<div class="grid stack-grid">
+					{skills.map((s) => (
+						<TerminalWindow title={s.group}>
+							<ul class="tag-list">
+								{s.items.map((i) => <li class="tag">{i}</li>)}
+							</ul>
+						</TerminalWindow>
+					))}
+				</div>
+			</section>
+
+			<section class="section">
+				<div class="section-head">
+					<p class="eyebrow">~/blog $ ls -t | head -4</p>
+					<a class="link-more" href="/blog">view all →</a>
+				</div>
+				<ul class="post-list">
+					{posts.map((post) => (
+						<li>
+							<a class="post-row" href={`/blog/${post.id}/`}>
+								<span class="post-prompt" aria-hidden="true">❯</span>
+								<span class="post-title">{post.data.title}</span>
+								<span class="post-date mono"><FormattedDate date={post.data.pubDate} /></span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { margin-top: 1.5rem; }
+	.hero-line { margin: 0 0 0.6rem; }
+	.hero-name {
+		margin: 0.2rem 0 0.4rem;
+		font-size: clamp(2rem, 3vw + 1rem, 3rem);
+	}
+	.hero-tagline { color: var(--text-muted); margin: 0 0 1rem; }
+	.hero-bio { max-width: 68ch; }
+	.hero-mvp { margin: 1.25rem 0 1.5rem; }
+	.hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+	.grid { display: grid; gap: 1rem; }
+	.stack-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	@media (max-width: 900px) { .stack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@media (max-width: 560px) { .stack-grid { grid-template-columns: 1fr; } }
+
+	.tag-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.tag {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.55rem;
+		font-family: var(--font-mono);
+		font-size: 0.82rem;
+		color: var(--text);
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+	}
+
+	.section-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.75rem;
+	}
+	.link-more {
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+	}
+	.post-list { list-style: none; padding: 0; margin: 0; }
+	.post-row {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: baseline;
+		gap: 0.7rem;
+		padding: 0.7rem 0.85rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text);
+		text-decoration: none;
+		margin-bottom: 0.5rem;
+		transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+	}
+	.post-row:hover {
+		border-color: var(--accent);
+		background: var(--surface-2);
+		text-decoration: none;
+		transform: translateX(2px);
+	}
+	.post-prompt { color: var(--prompt); font-family: var(--font-mono); }
+	.post-title { color: var(--text); }
+	.post-date { color: var(--text-muted); font-size: 0.85rem; }
+	@media (max-width: 560px) {
+		.post-row { grid-template-columns: auto 1fr; }
+		.post-date { grid-column: 1 / -1; padding-left: 1.6rem; }
+	}
+</style>

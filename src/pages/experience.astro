@@ -1,0 +1,173 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_TITLE } from '../consts';
+
+interface Role {
+	title: string;
+	company: string;
+	location: string;
+	from: string;
+	to: string;
+	highlights: string[];
+}
+
+const roles: Role[] = [
+	{
+		title: 'Software Engineer',
+		company: 'Huawei Technologies Co., Ltd.',
+		location: 'Cluster Computing Network Development Department',
+		from: 'Dec 2021',
+		to: 'Dec 2025',
+		highlights: [
+			'Designed and implemented backend services for cluster network management systems covering configuration, monitoring, traffic shaping, congestion scheduling, host security, and device port management.',
+			'Built and maintained Spring Boot microservices deployed on Kubernetes with scalable delivery and consistent deployment workflows.',
+			'Defined cross-service communication interfaces using Thrift IDL and synchronized operational data between distributed services and in-memory data stores.',
+			'Investigated defects and reliability issues using static code scanning, debugging tools, logs, distributed tracing, packet analysis, and production-oriented troubleshooting.',
+			'Participated in Agile delivery, requirement analysis, code reviews, technical documentation, sprint planning, and cross-team collaboration with CLI and Linux SDK teams.',
+		],
+	},
+	{
+		title: 'Java Software Engineer Intern',
+		company: 'OKX',
+		location: 'Core matching system team',
+		from: 'Jul 2021',
+		to: 'Oct 2021',
+		highlights: [
+			'Worked with event-driven architecture, high-performance backend systems, and reliability-sensitive trading infrastructure.',
+			'Used Aeron Archive concepts for message storage and replay in auditing, fault detection, and market data distribution scenarios.',
+			'Built practical experience in Java backend development, Maven builds, Spring Cloud concepts, distributed service debugging, and performance-oriented testing.',
+		],
+	},
+];
+
+const education = [
+	'Yoobee College of Creative Innovation — Master of Software Engineering, expected Apr 2027',
+	'University of Technology Sydney — Master of Engineering: Software Systems Engineering, 2020-2021',
+	'University of Technology Sydney — Bachelor of Science (Honours) in Information Technology: First Class Honours, 2019-2020',
+	'Nanjing University of Aeronautics and Astronautics — Bachelor\'s Degree: Software Engineering, 2016-2020',
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Experience | ${SITE_TITLE}`} description="Work experience and education of Weilai Wang." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="section">
+				<p class="eyebrow">~/experience $ git log --oneline</p>
+				<h1>Work experience</h1>
+				<p class="muted">Backend engineering, distributed systems, Kubernetes-based services, and production troubleshooting.</p>
+			</section>
+
+			<section class="timeline">
+				{roles.map((role) => (
+					<article class="role">
+						<div class="role-marker" aria-hidden="true"><span class="dot"></span></div>
+						<div class="role-card">
+							<header class="role-head">
+								<div>
+									<h2 class="role-title">
+										{role.title}
+										<span class="muted at"> @ </span>
+										<span class="role-company">{role.company}</span>
+									</h2>
+									<p class="role-location mono">{role.location}</p>
+								</div>
+								<time class="role-time mono">
+									{role.from} <span class="muted">→</span> {role.to}
+								</time>
+							</header>
+							<ul class="role-highlights">
+								{role.highlights.map((h) => <li>{h}</li>)}
+							</ul>
+						</div>
+					</article>
+				))}
+			</section>
+
+			<section class="section">
+				<p class="eyebrow">~/education $ cat degrees.txt</p>
+				<ul class="education-list">
+					{education.map((item) => <li>{item}</li>)}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.timeline {
+		max-width: 900px;
+		margin: 1.5rem auto 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		position: relative;
+	}
+	.timeline::before {
+		content: '';
+		position: absolute;
+		left: 9px;
+		top: 6px;
+		bottom: 6px;
+		width: 1px;
+		background: linear-gradient(180deg, transparent, var(--border) 8%, var(--border) 92%, transparent);
+	}
+	.role {
+		display: grid;
+		grid-template-columns: 20px 1fr;
+		gap: 1rem;
+		align-items: start;
+	}
+	.role-marker {
+		display: grid;
+		place-items: center;
+		padding-top: 18px;
+	}
+	.dot {
+		width: 11px;
+		height: 11px;
+		border-radius: 999px;
+		background: var(--prompt);
+		border: 2px solid var(--bg);
+		box-shadow: 0 0 0 1px var(--prompt), 0 0 14px var(--prompt);
+	}
+	.role-card {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: 1rem 1.1rem 1.1rem;
+		box-shadow: var(--shadow-1);
+	}
+	.role-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.6rem;
+	}
+	.role-title { margin: 0; font-size: 1.1rem; }
+	.role-company { color: var(--accent); }
+	.role-location { margin: 0.15rem 0 0; color: var(--text-muted); font-size: 0.82rem; }
+	.role-time { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+	.role-highlights { margin: 0.4rem 0 0; padding-left: 1.2em; }
+	.role-highlights li { margin: 0.25em 0; }
+	.education-list {
+		margin: 0;
+		padding-left: 1.2rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding-top: 1rem;
+		padding-bottom: 1rem;
+	}
+	.education-list li { margin: 0.35rem 0; }
+	.at { font-weight: 400; }
+</style>

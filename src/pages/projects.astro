@@ -1,0 +1,103 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const projects = [
+	{
+		title: 'Cloud Governance X',
+		status: 'Ongoing | Active development',
+		stack: '.NET 10, PostgreSQL, Terraform, GitHub Actions, Docker, Azure SDK, Azure Resource Graph, Azure Cost Management',
+		details: [
+			'Building a cloud governance and FinOps platform for cloud resource inventory, cost visibility, ETL execution tracking, and production-oriented backend engineering.',
+			'Implemented a .NET 10 backend foundation using Clean Architecture-style boundaries across API, Application, Domain, Infrastructure, Worker, Migrator, and automated test projects.',
+			'Built Azure resource inventory and cost ingestion foundations using Azure SDK, Azure Resource Graph, Azure Cost Management Query API, PostgreSQL repositories, and ETL job tracking.',
+			'Designed PostgreSQL persistence for cloud resources, daily cost records, ETL job runs, provider accounts, tenant-aware data access, and governance metadata.',
+			'Established quality controls including architecture boundary tests, repository static checks, migration verification, GitHub Actions CI, and Terraform validation.',
+		],
+	},
+	{
+		title: 'Production Backend Services at Huawei',
+		status: 'Professional work',
+		stack: 'Java, Spring Boot, Kubernetes, Thrift IDL, Linux, distributed tracing, packet analysis',
+		details: [
+			'Built cluster network management services for configuration, monitoring, traffic shaping, congestion scheduling, host security, and device port management.',
+			'Supported long-term maintainability through consistent deployment workflows, service contracts, code review, documentation, and cross-team delivery.',
+		],
+	},
+	{
+		title: 'Matching System Internship at OKX',
+		status: 'Professional internship',
+		stack: 'Java, Maven, Spring Cloud concepts, Aeron Archive, event-driven architecture',
+		details: [
+			'Worked in a reliability-sensitive core matching system team and gained exposure to high-performance backend systems.',
+			'Used message storage and replay concepts for auditing, fault detection, and market data distribution scenarios.',
+		],
+	},
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Projects | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="section page-section">
+				<p class="eyebrow">~/projects $ ls -1</p>
+				<h1>Projects</h1>
+				<p class="muted">Selected engineering work across backend systems, platform automation, cloud governance, and production reliability.</p>
+
+				<ul class="project-list">
+					{projects.map((project) => (
+						<li class="project-card">
+							<header class="project-head">
+								<div>
+									<h2>{project.title}</h2>
+									<p class="mono status">{project.status}</p>
+								</div>
+							</header>
+							<p class="stack"><strong>Stack:</strong> {project.stack}</p>
+							<ul>
+								{project.details.map((detail) => <li>{detail}</li>)}
+							</ul>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.page-section { max-width: 980px; margin: 0 auto; }
+	.project-list {
+		list-style: none;
+		padding: 0;
+		display: grid;
+		gap: 1rem;
+		margin: 1.5rem 0 0;
+	}
+	.project-card {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: 1rem 1.1rem;
+		box-shadow: var(--shadow-1);
+	}
+	.project-card h2 { margin: 0; font-size: 1.15rem; }
+	.project-head {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.7rem;
+	}
+	.status { color: var(--prompt); margin: 0.2rem 0 0; font-size: 0.85rem; }
+	.stack { color: var(--text-muted); margin: 0 0 0.75rem; }
+	.project-card ul { margin: 0; padding-left: 1.2rem; }
+	.project-card li li { margin: 0.3rem 0; }
+</style>
