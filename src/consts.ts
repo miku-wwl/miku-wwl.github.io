@@ -12,6 +12,6 @@ export const AWARD_LABEL = 'Linux Foundation LiFT Scholar';
 
 export const SOCIAL_LINKS = [
 	{ label: 'GitHub', href: 'https://github.com/miku-wwl', handle: 'miku-wwl', icon: 'github' },
-	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/weilai-wesley-wang', handle: 'weilai-wesley-wang', icon: 'linkedin' },
+	{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/weilai-wesley-wang-9b34a2368/', handle: 'weilai-wesley-wang-9b34a2368', icon: 'linkedin' },
 	{ label: 'Email', href: 'mailto:weilai.ire@outlook.com', handle: 'weilai.ire@outlook.com', icon: 'mail' },
 ] as const;
