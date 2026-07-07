@@ -1,136 +1,102 @@
 ---
-title: 'CPU 飙高与系统变慢的排查路径'
-description: '整理生产环境 CPU 异常升高时的监控、线程、日志、代码热点和资源争用排查方法。'
-pubDate: '2026-07-04'
+title: 'Troubleshooting a sudden CPU spike in a backend service'
+description: 'A production-oriented checklist for CPU spikes, slow services, Java thread dumps, GC pressure, locks, and hot code paths.'
+pubDate: '2025-08-22'
 ---
 
-CPU 突然飙高并且系统反应变慢，通常是由于系统资源争用或异常负载导致的。为了有效地排查这个问题，可以按照以下几个步骤来进行：
+# Troubleshooting a sudden CPU spike in a backend service
 
-### 1. 收集信息
+A CPU spike is easy to see and hard to interpret. High CPU can mean healthy throughput, a runaway loop, lock contention, expensive garbage collection, bad regex, excessive logging, or a downstream timeout causing retry storms.
 
-#### 1.1 监控工具
-- **使用系统监控工具**：使用如 `top`、`htop`、`ps`、`vmstat`、`iostat`、`netstat` 等工具来查看系统的 CPU 使用情况、内存使用情况、磁盘 I/O 和网络状况。
+The goal is not to guess. The goal is to quickly separate "the service is busy doing useful work" from "the service is burning CPU because something is wrong".
 
-#### 1.2 日志文件
-- **查看系统日志**：检查 `/var/log/messages`、`/var/log/syslog` 等系统日志文件，寻找可能的错误信息或异常行为。
-- **应用程序日志**：查看应用程序的日志文件，寻找可能导致 CPU 使用率飙升的异常信息。
+## Start with scope
 
-### 2. 分析 CPU 使用情况
+I first check whether the spike is isolated or systemic:
 
-#### 2.1 查看 CPU 使用率
-- **使用 `top` 或 `htop`**：这两个工具可以帮助你实时查看各个进程的 CPU 使用情况，识别出 CPU 使用率较高的进程。
-- **使用 `ps aux`**：列出所有进程及其 CPU 使用情况。
+- One pod or every pod?
+- One node or multiple nodes?
+- One version or multiple versions?
+- One endpoint or all endpoints?
+- A traffic increase or no traffic change?
 
-#### 2.2 分析进程
-- **使用 `ps` 命令**：结合 `-eo` 选项查看特定的列，如 PID、用户、CPU 使用率、内存使用率等。
-  ```sh
-  ps -eo pid,user,%cpu,%mem,command --sort=-%cpu
-  ```
+If only one instance is affected, I suspect a hot key, uneven load balancing, a stuck request, or an instance-level issue. If every instance is affected, I look for a deployment, dependency change, traffic pattern, or shared infrastructure event.
 
-### 3. 进程分析
+## Correlate CPU with business traffic
 
-#### 3.1 详细进程信息
-- **使用 `top` 或 `htop` 查看详细信息**：这些工具可以让你实时监控进程的 CPU 和内存使用情况，并提供更多的信息，如进程的状态（如运行中、睡眠、僵尸等）。
+CPU without context is noisy. I compare it with:
 
-#### 3.2 进程跟踪
-- **使用 `strace` 或 `perf` 工具**：这些工具可以帮助你追踪进程的具体行为，比如系统调用、函数调用等，有助于进一步定位问题。
-  ```sh
-  strace -p <PID>
-  perf record -g -p <PID>
-  ```
+- Request rate.
+- Error rate.
+- Latency percentiles.
+- Queue depth or consumer lag.
+- Database latency.
+- Retry count.
+- GC metrics.
 
-### 4. 检查系统负载
+High CPU with higher throughput can be normal. High CPU with flat throughput and rising latency is more suspicious.
 
-#### 4.1 查看系统负载
-- **使用 `uptime` 和 `loadavg`**：查看系统的平均负载情况。
-  ```sh
-  uptime
-  cat /proc/loadavg
-  ```
+## Inspect hot threads
 
-#### 4.2 查看磁盘 I/O
-- **使用 `iostat`**：查看磁盘 I/O 情况，判断是否有磁盘 I/O 的瓶颈。
-  ```sh
-  iostat -x 1
-  ```
+For a Java service, a practical sequence is:
 
-### 5. 检查网络状况
+1. Use `top` or container metrics to find the process.
+2. Use `top -H` to identify hot threads.
+3. Convert the thread id to hexadecimal.
+4. Match it in `jstack` output.
 
-#### 5.1 网络流量监控
-- **使用 `netstat` 和 `ss`**：查看网络连接情况。
-  ```sh
-  netstat -antp
-  ss -antp
-  ```
+This often reveals the shape of the problem: JSON serialization, regex matching, compression, logging, encryption, a busy loop, or a framework thread doing unexpected work.
 
-#### 5.2 网络流量分析
-- **使用 `iftop` 或 `nethogs`**：查看网络接口的流量情况。
-  ```sh
-  iftop
-  nethogs
-  ```
+Thread dumps should be taken more than once. A single dump is a photograph. Multiple dumps show whether the same stack remains hot.
 
-### 6. 检查内存使用情况
+## Check GC behavior
 
-#### 6.1 查看内存使用
-- **使用 `free` 或 `vmstat`**：查看内存使用情况。
-  ```sh
-  free -m
-  vmstat 1
-  ```
+CPU can be consumed by garbage collection. Signs include:
 
-#### 6.2 查找内存泄漏
-- **使用 `valgrind`**：如果你怀疑某个应用程序有内存泄漏问题，可以使用 `valgrind` 工具来检测。
-  ```sh
-  valgrind --leak-check=full --show-leak-kinds=all ./your_application
-  ```
+- High allocation rate.
+- Frequent young GC.
+- Long old GC pauses.
+- Rising heap after each collection.
+- Many temporary objects from serialization or collection transforms.
 
-### 7. 检查系统配置
+If GC is the issue, increasing CPU will not fix the root cause. The fix may be reducing allocation, reusing buffers, changing batch sizes, fixing a memory leak, or tuning heap settings after understanding the allocation profile.
 
-#### 7.1 查看系统配置
-- **检查系统配置文件**：如 `/etc/sysctl.conf`，确保系统的内核参数配置合理。
-- **检查调度策略**：查看系统的调度策略是否合理，如 `nice` 和 `renice` 命令。
-  ```sh
-  renice +10 -p <PID>
-  ```
+## Look for retry storms
 
-### 8. 检查应用程序配置
+Retry storms are common during partial failures. A downstream service becomes slow, requests time out, clients retry, and CPU rises because the service is doing repeated work that has little chance of succeeding.
 
-#### 8.1 检查应用程序配置
-- **检查应用程序的配置文件**：确保配置文件中的参数设置合理，如线程数、连接数等。
-- **调整应用程序配置**：根据实际情况调整应用程序的配置，以降低 CPU 使用率。
+Signals include:
 
-### 9. 采取临时措施
+- Timeout errors.
+- Increased outbound calls.
+- More logs per request.
+- Circuit breakers opening.
+- Thread pools saturated by waiting work.
 
-#### 9.1 临时降负载
-- **限制进程资源**：使用 `cgroups` 或 `systemd` 控制组来限制特定进程的资源使用。
-  ```sh
-  systemctl set-property your.service MemoryLimit=1G
-  ```
+The fix is usually a mix of timeouts, bounded retries, jitter, circuit breaking, and load shedding.
 
-#### 9.2 重启相关服务
-- **重启出现问题的服务**：如果发现某个服务出现问题，可以尝试重启服务，看是否恢复正常。
+## Common code-level causes
 
-### 10. 长期解决方案
+Some patterns are repeat offenders:
 
-#### 10.1 优化应用程序
-- **优化代码**：如果发现应用程序中有性能瓶颈，可以优化代码，减少不必要的计算和资源消耗。
-- **升级硬件**：如果系统资源不足，可以考虑升级硬件，如增加内存、升级 CPU 等。
+- Regex on large input.
+- Logging large objects.
+- Repeated JSON parsing.
+- Inefficient collection scans.
+- Busy wait loops.
+- Hash collisions or poor key distribution.
+- Excessive metrics labels.
+- Compression on the request path.
 
-#### 10.2 使用监控工具
-- **使用专业的监控工具**：如 Prometheus、Grafana、Zabbix 等，持续监控系统的各项指标，及时发现问题。
+Profiling is the fastest way to stop arguing with intuition. Even a short CPU profile can point to the method that matters.
 
-### 示例代码
+## Incident finish line
 
-以下是一个使用 `top` 查看 CPU 使用率较高的进程的示例：
+The incident is not over when CPU returns to normal. I want a clear explanation of:
 
-```sh
-top -b -n 1 | grep Cpu(s)
-```
+- What changed?
+- Why did CPU rise?
+- Why did alerts catch it or miss it?
+- What limit or guardrail should exist next time?
 
-这将显示当前 CPU 的使用情况。
-
-### 总结
-
-CPU 突然飙高且系统反应慢的问题通常是由于系统资源争用或异常负载导致的。通过以上步骤，可以逐步排查并解决问题。在实际操作中，建议根据具体情况选择合适的工具和方法，并结合日志分析、系统配置检查等多种手段来确定问题的根本原因。
-
+CPU spikes are stressful because they are visible and ambiguous. A repeatable playbook turns them into a debugging problem instead of a guessing contest.

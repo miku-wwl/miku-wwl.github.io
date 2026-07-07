@@ -1,131 +1,75 @@
 ---
-title: '微服务优雅停机：如何保证请求和数据不丢失'
-description: '从停止接流量、等待任务完成、持久化状态、超时控制到健康检查设计优雅停机机制。'
-pubDate: '2026-07-02'
+title: 'Graceful shutdown for backend services'
+description: 'A shutdown sequence for Kubernetes services, HTTP servers, message consumers, workers, and data integrity.'
+pubDate: '2025-02-03'
 ---
 
-实现一个优雅停机（Graceful Shutdown）的机制非常重要，尤其是在分布式系统和微服务架构中，以确保在服务停止时不会丢失任何数据，并且正在处理的请求能够顺利完成。以下是一些实现优雅停机的方法：
+# Graceful shutdown for backend services
 
-### 1. 设计原则
+Graceful shutdown means the service stops taking new work, finishes or safely hands off current work, and exits before the platform kills it. It sounds small, but it is one of the details that separates a reliable service from a service that loses data during every deployment.
 
-#### 1.1 避免突然中断
-- 在停机之前，先停止接收新的请求。
-- 允许正在处理的请求完成。
+In Kubernetes, shutdown usually begins with a `SIGTERM`. The container then has a termination grace period before it receives `SIGKILL`. The application must use that window deliberately.
 
-#### 1.2 数据一致性
-- 确保所有正在处理的数据都被正确地保存到持久存储中。
-- 在关闭前，确保所有事务都已经完成。
+## Stop receiving new traffic
 
-### 2. 技术实现
+The first step is to remove the instance from the serving path. For HTTP services, readiness should fail as soon as shutdown begins. That tells Kubernetes and load balancers to stop sending new requests.
 
-#### 2.1 标记为只读（Read-only Mode）
-- 在接收到关闭信号后，服务进入只读模式，不再接收新的写操作请求。
-- 允许读操作继续，直到所有正在进行的事务完成。
+The application should continue to serve existing connections for a short drain period. This matters because load balancers and clients may still have the old endpoint cached for a few seconds.
 
-#### 2.2 信号处理
-- 使用操作系统提供的信号（如 SIGTERM）来通知服务进行关闭。
-- 在服务启动时注册信号处理器，以便处理关闭信号。
+## Drain in-flight requests
 
-#### 2.3 线程池关闭
-- 如果服务使用了线程池来处理请求，可以关闭线程池，拒绝新的任务提交。
-- 等待正在执行的任务完成后再关闭线程池。
+The service should track active requests. During shutdown:
 
-#### 2.4 资源释放
-- 释放所有外部资源，如数据库连接、文件句柄等。
-- 清理临时文件和其他临时资源。
+- New requests should be rejected or not accepted.
+- Existing requests should be allowed to finish within a timeout.
+- Long-running requests should respect cancellation.
+- Background work started by a request should be completed or persisted.
 
-### 3. 示例代码
+The timeout must be shorter than the platform termination grace period. Otherwise the process will still be killed abruptly.
 
-以下是一个使用 Java 实现优雅停机的示例：
+## Handle message consumers carefully
 
-```java
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+For message consumers, graceful shutdown is about offsets and acknowledgements.
 
-public class GracefulShutdownExample {
+A safe consumer should:
 
-    private static final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
-    private static ExecutorService executor = Executors.newFixedThreadPool(10);
+- Stop polling or claiming new messages.
+- Finish messages already being processed.
+- Commit offsets only after successful processing.
+- Avoid acknowledging work that has not been persisted.
+- Make processing idempotent so replay is safe.
 
-    public static void main(String[] args) {
-        // 注册信号处理器
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Received shutdown signal.");
-            shutdownRequested.set(true);
-        }));
+If processing cannot finish in time, it is usually better to let the message be retried than to acknowledge it early and lose it.
 
-        // 启动任务处理线程
-        for (int i = 0; i < 10; i++) {
-            int taskId = i;
-            executor.execute(() -> {
-                try {
-                    while (!shutdownRequested.get()) {
-                        processTask(taskId);
-                    }
-                    System.out.println("Task " + taskId + " is shutting down gracefully.");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+## Protect transactions
 
-        // 模拟一段时间后发送关闭信号
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+Database transactions should not be left in an ambiguous state. During shutdown, code should avoid starting new long transactions. Existing transactions should either commit cleanly or roll back.
 
-        // 请求关闭
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                System.err.println("Tasks did not complete in time; forcing shutdown.");
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+For workflows that span multiple resources, an outbox table or durable state machine is safer than relying on a process to survive until every side effect completes.
 
-        System.out.println("Shutdown completed.");
-    }
+## Kubernetes settings that matter
 
-    private static void processTask(int taskId) {
-        // 模拟任务处理
-        System.out.println("Processing task " + taskId);
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
+Graceful shutdown is not only application code. The deployment configuration matters too:
 
-### 4. 微服务环境下的优雅停机
+- `terminationGracePeriodSeconds` should be long enough for normal drain.
+- Readiness probes should reflect shutdown state.
+- `preStop` hooks can add a short delay when load balancers need time to converge.
+- Pod disruption budgets should prevent too many replicas from draining at once.
+- Rolling update settings should keep enough capacity available.
 
-在微服务环境下，优雅停机还需要考虑以下几点：
+These settings should be tested, not assumed.
 
-#### 4.1 服务发现与注册中心
-- 在服务关闭前，通知服务发现与注册中心（如 Consul、Eureka）移除自身。
-- 这样可以避免其他服务继续尝试连接到即将关闭的服务。
+## How I test it
 
-#### 4.2 客户端超时处理
-- 在客户端，增加超时处理机制，避免长时间等待未响应的服务。
-- 如果服务关闭，客户端应该能够快速切换到其他可用的服务实例。
+A practical test is to run a load test and terminate pods during the test. I watch:
 
-#### 4.3 通知下游服务
-- 如果服务关闭会影响到下游服务，应该通知下游服务做好准备。
-- 例如，关闭前可以发送一个通知消息，告知下游服务当前服务即将关闭。
+- HTTP 5xx rate.
+- Request latency.
+- In-flight request count.
+- Consumer duplicate rate.
+- Lost or stuck messages.
+- Shutdown duration.
 
-### 5. 监控与日志
+If termination causes visible errors or data loss, the deployment process is not safe yet.
 
-- **监控**：在服务关闭过程中，应该通过监控工具（如 Prometheus、Grafana）来监控服务的状态，确保关闭过程顺利。
-- **日志**：记录关闭过程中的关键事件，以便后续分析和服务恢复时参考。
-
-### 总结
-
-优雅停机机制可以确保在服务关闭时不丢失任何数据，并且正在处理的请求能够顺利完成。通过合理的设计和实现，可以大大提高服务的可靠性和可用性。在实际应用中，还需要根据具体的业务场景和技术栈进行适当的调整和优化。
-
+Graceful shutdown is not glamorous architecture. It is operational hygiene. But it pays off every time a service is deployed, rescheduled, scaled down, or interrupted by infrastructure maintenance.

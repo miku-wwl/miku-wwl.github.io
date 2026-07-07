@@ -1,183 +1,98 @@
 ---
-title: 'Redis 与 MySQL 如何保证数据一致性'
-description: '梳理缓存与数据库一致性策略，包括双写、消息队列、延迟双删、补偿和最终一致性。'
-pubDate: '2026-07-03'
+title: 'Keeping Redis and MySQL reasonably consistent'
+description: 'How to think about cache-aside, invalidation, delayed delete, binlog-driven refresh, idempotency, and the limits of cache consistency.'
+pubDate: '2025-05-14'
 ---
 
-在分布式系统中，保证不同存储系统之间的数据一致性是一项挑战。Redis 和 MySQL 作为两种常用的存储系统，前者通常用于缓存，后者则作为关系型数据库用于持久化存储。为了保证两者之间的数据一致性，可以采取以下几种策略：
+# Keeping Redis and MySQL reasonably consistent
 
-1. **双写一致性**
-2. **使用消息队列**
-3. **事务处理**
+Redis is usually a cache. MySQL is usually the source of truth. That sentence sounds obvious, but many consistency bugs happen when a system forgets it.
 
-下面将通过具体的 Java 代码示例来演示如何实现这些策略。
+The goal is not perfect distributed consistency. The goal is to choose a consistency model that matches the business requirement and to make stale data bounded, observable, and recoverable.
 
-### 示例场景
+## Cache-aside as the default
 
-假设我们有一个电商应用，需要在用户下单时，实时更新库存信息。这里使用 Redis 作为缓存存储，MySQL 作为持久化存储。
+The most common pattern is cache-aside:
 
-### 双写一致性
+1. Read from Redis.
+2. If the key is missing, read from MySQL.
+3. Write the value back to Redis with a TTL.
+4. On update, write MySQL and invalidate Redis.
 
-双写一致性指的是在更新数据时，同时更新 Redis 和 MySQL 中的数据。为了保证数据的一致性，可以在更新 MySQL 成功后再更新 Redis。
+This model is simple and works well for many services. The cache is a performance layer, not the owner of the data.
 
-#### 示例代码
+The update order matters. I generally prefer updating MySQL first and then deleting the cache key. Updating the cache directly after a database write can create stale cache if concurrent writes complete out of order.
 
-```java
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import redis.clients.jedis.Jedis;
+## Why stale data still happens
 
-public class DataConsistencyExample {
+Even with the normal pattern, stale data can happen:
 
-    private static final String REDIS_HOST = "localhost";
-    private static final int REDIS_PORT = 6379;
-    private static final String MYSQL_URL = "jdbc:mysql://localhost:3306/yourdb";
-    private static final String MYSQL_USER = "root";
-    private static final String MYSQL_PASSWORD = "your_password";
+- A read misses cache and reads old data before a concurrent update commits.
+- The read writes old data into Redis after the update deletes the key.
+- Cache deletion fails after the database update succeeds.
+- Replication lag makes a read replica return old data.
+- Multiple services update the same entity with different cache rules.
 
-    public static void main(String[] args) {
-        updateInventory(1); // 更新库存
-    }
+This is why cache consistency should be designed as eventual consistency unless the domain truly requires stronger guarantees.
 
-    public static void updateInventory(int productId) {
-        // 1. 更新 MySQL 数据库
-        try (Connection conn = DriverManager.getConnection(MYSQL_URL, MYSQL_USER, MYSQL_PASSWORD)) {
-            String sql = "UPDATE products SET inventory = inventory - 1 WHERE id = ?";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, productId);
-                int rowsAffected = pstmt.executeUpdate();
-                if (rowsAffected > 0) {
-                    // 2. 更新 Redis 缓存
-                    updateRedisCache(productId);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+## Delayed double delete
 
-    public static void updateRedisCache(int productId) {
-        try (Jedis jedis = new Jedis(REDIS_HOST, REDIS_PORT)) {
-            String key = "product:" + productId + ":inventory";
-            int inventory = Integer.parseInt(jedis.get(key));
-            inventory--;
-            jedis.set(key, String.valueOf(inventory));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
+Delayed double delete is a common mitigation:
 
-### 使用消息队列
+1. Delete cache.
+2. Update database.
+3. Wait briefly.
+4. Delete cache again.
 
-在双写一致性的基础上，可以进一步引入消息队列（如 RabbitMQ、Kafka 等），通过异步的方式更新 Redis 缓存。这种方式可以提高系统的吞吐量，并且可以更容易地处理失败情况。
+The second delete tries to remove stale data that may have been written by a concurrent read during the update window.
 
-#### 示例代码
+This is not a formal guarantee. The delay is workload dependent, and long request tails can still break the assumption. It can be useful, but I would not present it as a perfect solution.
 
-假设我们使用 RabbitMQ 作为消息队列。
+## Binlog-driven invalidation
 
-```java
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import redis.clients.jedis.Jedis;
+For larger systems, database change streams can drive cache invalidation or refresh. A service reads MySQL binlog events, identifies changed rows, and deletes or updates corresponding Redis keys.
 
-public class DataConsistencyWithQueueExample {
+The benefit is centralization. Instead of every writer remembering every cache key, the change stream becomes a consistent invalidation path.
 
-    private static final String REDIS_HOST = "localhost";
-    private static final int REDIS_PORT = 6379;
-    private static final String MYSQL_URL = "jdbc:mysql://localhost:3306/yourdb";
-    private static final String MYSQL_USER = "root";
-    private static final String MYSQL_PASSWORD = "your_password";
-    private static final String RABBITMQ_URL = "amqp://guest:guest@localhost:5672/";
-    private static final String QUEUE_NAME = "inventory_update_queue";
+The cost is operational complexity:
 
-    public static void main(String[] args) throws Exception {
-        updateInventoryUsingQueue(1); // 更新库存
-    }
+- Event ordering must be understood.
+- Consumers must be idempotent.
+- Lag must be monitored.
+- Schema changes can break event parsing.
+- Rebuild and replay procedures must exist.
 
-    public static void updateInventoryUsingQueue(int productId) throws Exception {
-        // 1. 更新 MySQL 数据库
-        try (Connection conn = DriverManager.getConnection(MYSQL_URL, MYSQL_USER, MYSQL_PASSWORD)) {
-            String sql = "UPDATE products SET inventory = inventory - 1 WHERE id = ?";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, productId);
-                int rowsAffected = pstmt.executeUpdate();
-                if (rowsAffected > 0) {
-                    // 2. 将更新 Redis 缓存的操作发送到消息队列
-                    sendUpdateMessage(productId);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+This approach is strong when many services write the same data or when cache invalidation rules are too scattered.
 
-    public static void sendUpdateMessage(int productId) throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setUri(RABBITMQ_URL);
-        try (Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
-            channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-            String message = "product:" + productId + ":inventory";
-            channel.basicPublish("", QUEUE_NAME, null, message.getBytes("UTF-8"));
-        }
-    }
+## TTL is a safety net
 
-    // 消费者端代码
-    public static void consumeUpdateMessage() throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setUri(RABBITMQ_URL);
-        try (Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
-            channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-            channel.basicConsume(QUEUE_NAME, true, (consumerTag, delivery) -> {
-                String message = new String(delivery.getBody(), "UTF-8");
-                updateRedisCache(message);
-            }, consumer -> {});
-        }
-    }
+Every cache key that can become stale should have a TTL. TTL does not solve consistency, but it limits how long a bug can survive.
 
-    public static void updateRedisCache(String key) {
-        try (Jedis jedis = new Jedis(REDIS_HOST, REDIS_PORT)) {
-            int inventory = Integer.parseInt(jedis.get(key));
-            inventory--;
-            jedis.set(key, String.valueOf(inventory));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
+TTL design should consider:
 
-### 事务处理
+- How stale the business can tolerate the value.
+- Whether hot keys can expire at the same time.
+- Whether random jitter should be added.
+- Whether rebuild cost is acceptable.
 
-在某些情况下，可以使用事务来保证数据的一致性。例如，可以将 Redis 和 MySQL 的操作封装在一个事务中，确保要么全部成功，要么全部失败。
+For hot keys, I often prefer active refresh or background warming instead of allowing all clients to rebuild the value at once.
 
-#### 示例代码
+## Idempotency and versioning
 
-由于 Redis 和 MySQL 不在同一数据库中，无法直接使用事务来保证跨数据库的一致性。但是可以在业务层面实现类似的功能，例如在更新 MySQL 之前先检查 Redis 中的数据，确保数据的一致性后再进行更新。
+When updates can arrive out of order, versioning helps. A cache value can include a version, updated timestamp, or database sequence. Writers should not overwrite a newer value with an older one.
 
-### 拓展讨论
+For event-driven cache updates, idempotency is mandatory. The same event may be delivered more than once. A replay should not corrupt the cache.
 
-#### 1. **幂等性**
+## Practical recommendation
 
-在分布式系统中，幂等性是一个非常重要的概念。确保更新操作的幂等性可以避免因网络等原因导致的重复更新问题。可以通过为每次更新操作分配唯一的标识符（如订单号）来实现幂等性。
+My default strategy is:
 
-#### 2. **最终一致性**
+- Use MySQL as the source of truth.
+- Use cache-aside for normal read paths.
+- Invalidate cache after successful database writes.
+- Add TTL and jitter.
+- Make deletion failures visible.
+- Use binlog-driven invalidation when multiple writers make local invalidation unsafe.
+- Use version checks for event-driven updates.
 
-在某些场景下，可以接受数据最终一致性的策略，即允许在短时间内数据不一致，但最终会达到一致的状态。这种方法可以降低系统的复杂性，提高系统的可用性。
-
-#### 3. **补偿机制**
-
-在发生异常时，可以设计补偿机制来恢复数据一致性。例如，可以记录日志，在系统恢复正常后通过补偿操作来恢复数据的一致性。
-
-### 总结
-
-通过上述示例代码和拓展讨论，我们可以了解到如何通过不同的策略来保证 Redis 和 MySQL 之间的数据一致性。在实际开发中，根据具体的业务场景和技术栈选择合适的方法是非常重要的。合理的数据一致性策略不仅能够提高系统的稳定性，还能增强系统的整体性能。
-
+The important mindset is to define the acceptable consistency window. Once the window is explicit, engineering decisions become easier: choose the cheapest design that stays inside it.

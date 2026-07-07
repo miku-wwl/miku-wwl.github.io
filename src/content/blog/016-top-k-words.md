@@ -1,97 +1,75 @@
 ---
-title: '如何在 2GB 文件中找出高频 Top 100 单词'
-description: '用分片、哈希、堆、外部排序和分布式处理思路解决大文件 Top-K 统计问题。'
-pubDate: '2026-06-22'
+title: 'Finding the top 100 words in a 2 GB file'
+description: 'A scalable approach to word counting with streaming, partitioning, local aggregation, and heap-based top-K selection.'
+pubDate: '2024-01-15'
 ---
 
-要在 2GB 大小的文件中找出高频的前 100 个单词，可以采用以下策略来优化处理速度和内存使用：
+# Finding the top 100 words in a 2 GB file
 
-### 分布式处理
+Finding the top 100 words in a 2 GB file is a classic data-processing problem. The best solution depends on available memory, input format, and accuracy requirements.
 
-对于非常大的文件，可以考虑将其分成多个部分处理，然后再合并结果。这种方法可以利用多核或多台机器的计算能力。
+If memory is enough to hold all distinct words, a single-pass hash map is simple. But the safer interview-style answer assumes the distinct word set may be too large for memory.
 
-### 多阶段处理
+## Streaming parser
 
-1. **分割文件**：将文件分成若干个较小的部分（例如，每个部分几百 MB），以便于处理。
-2. **处理每一部分**：对于每一部分文件，使用单机算法来统计单词频率。
-3. **合并结果**：将各个部分的结果汇总，找出最终的 Top 100 单词。
+The first step is to read the file as a stream instead of loading it all at once.
 
-### 算法选择
+The parser should:
 
-对于单个部分的处理，可以选择以下算法之一：
+- Read chunks or lines.
+- Normalize case if required.
+- Define word boundaries clearly.
+- Handle punctuation.
+- Avoid splitting multibyte characters if the input is not plain ASCII.
+- Emit one word at a time.
 
-1. **MapReduce**：
+The counting algorithm is only correct if tokenization is correct.
 
-   - **Map 阶段**：读取文件的每一行，并将单词映射为其出现次数的计数器。
-   - **Reduce 阶段**：汇总各个 Map 任务的结果，计算单词的总频率，并找出 Top 100 单词。
+## Partition by hash
 
-2. **Trie 树（前缀树）+ 哈希表**：
+To keep memory bounded, partition words into multiple temporary files by hash:
 
-   - 使用 Trie 树来存储单词，Trie 树的节点可以携带单词的频率信息。
-   - 同时维护一个哈希表来快速查找单词及其频率。
-   - 定期检查哈希表，将单词插入到 Trie 树中，并清空哈希表以释放内存。
+```text
+partition = hash(word) % N
+```
 
-3. **滑动窗口**：
-   - 使用滑动窗口来读取文件，每次只处理文件的一部分，这样可以限制内存使用。
-   - 对于每个窗口内的数据，使用哈希表来统计单词频率。
-   - 窗口移动时，更新哈希表中的频率。
+The same word always goes to the same partition. If `N` is chosen well, each partition becomes small enough to process in memory.
 
-### 具体实现步骤
+This is the key trick: the global counting problem becomes many smaller local counting problems.
 
-假设使用 Java 语言，以下是一个简化的实现思路：
+## Count each partition
 
-1. **文件分割**：使用工具将大文件分割成多个小文件。
-2. **处理单个小文件**：
+For each partition:
 
-   ```java
-   import java.io.BufferedReader;
-   import java.io.FileReader;
-   import java.util.HashMap;
-   import java.util.Map;
-   import java.util.PriorityQueue;
+1. Load words from that partition.
+2. Count them in a hash map.
+3. Keep the local top 100 using a min-heap.
+4. Merge the local candidates into a global min-heap.
 
-   public class WordFrequencyCounter {
-       public static void main(String[] args) {
-           Map<String, Integer> wordCounts = new HashMap<>();
-           try (BufferedReader br = new BufferedReader(new FileReader("file_part.txt"))) {
-               String line;
-               while ((line = br.readLine()) != null) {
-                   for (String word : line.split("\\W+")) { // 使用非字母字符作为分隔符
-                       wordCounts.put(word.toLowerCase(), wordCounts.getOrDefault(word.toLowerCase(), 0) + 1);
-                   }
-               }
-           } catch (Exception e) {
-               e.printStackTrace();
-           }
+The global heap stores only 100 items, so merging is cheap.
 
-           PriorityQueue<Map.Entry<String, Integer>> topWords = new PriorityQueue<>(
-                   (a, b) -> b.getValue().compareTo(a.getValue())
-           );
+## Why local top-K works here
 
-           wordCounts.entrySet().stream()
-                   .forEach(entry -> {
-                       if (topWords.size() < 100) {
-                           topWords.add(entry);
-                       } else if (entry.getValue() > topWords.peek().getValue()) {
-                           topWords.poll();
-                           topWords.add(entry);
-                       }
-                   });
+If a word is globally in the top 100, it must be in the top candidates of its own partition. Since each word belongs to exactly one partition, counting per partition does not split its frequency.
 
-           while (!topWords.isEmpty()) {
-               System.out.println(topWords.poll());
-           }
-       }
-   }
-   ```
+This is why hash partitioning is better than arbitrarily splitting the file and taking local top-K from chunks. If the same word appears across chunks, each chunk only sees part of the frequency.
 
-3. **合并结果**：将所有小文件处理后的结果合并，并找出最终的 Top 100 单词。
+## Approximate option
 
-### 注意事项
+If approximate results are acceptable, a Count-Min Sketch can estimate frequencies with fixed memory. A heap can track candidate words.
 
-- **内存管理**：确保在处理单个文件时，内存使用不会超过可用内存，可以通过定期清理不再需要的数据来释放内存。
-- **并发处理**：如果使用多线程或分布式处理，需要注意同步问题，防止数据竞争。
-- **异常处理**：处理文件读写时可能出现的各种异常情况。
+This is useful for streaming systems where temporary files are undesirable, but it introduces error bounds. For an exact answer, partitioning and exact counts are safer.
 
-通过上述方法，可以在有限的资源条件下高效地找出大文件中出现频率最高的前 100 个单词。
+## Production details
 
+In real systems, I would also consider:
+
+- Disk space for partitions.
+- Compression tradeoffs.
+- Parallel processing per partition.
+- Skew from extremely frequent words.
+- Stop-word handling.
+- Reproducible tokenization rules.
+- Observability for processing progress.
+
+The core pattern is common in data engineering: stream the input, partition by key, aggregate locally, and merge small summaries.

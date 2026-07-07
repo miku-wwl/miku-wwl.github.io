@@ -1,108 +1,67 @@
 ---
-title: 'ZooKeeper 如何实现分布式锁'
-description: '利用临时顺序节点、监听机制和会话语义实现分布式锁，并分析异常释放和公平性。'
-pubDate: '2026-06-25'
+title: 'Distributed locks with ZooKeeper ephemeral sequential nodes'
+description: 'How ZooKeeper implements lock ordering, why clients watch predecessors, and what session expiration means for correctness.'
+pubDate: '2024-04-12'
 ---
 
-Zookeeper 是一个分布式协调服务，它提供了多种原语来帮助解决分布式系统中的协调问题，其中包括分布式锁。Zookeeper 实现分布式锁的基本思路是利用 Znode（Zookeeper 中的节点）的顺序性和原子性来实现。
+# Distributed locks with ZooKeeper ephemeral sequential nodes
 
-下面是一个基本的实现步骤：
+ZooKeeper can implement a distributed lock by combining two features: ephemeral nodes and sequential nodes.
 
-### 1. 创建锁路径
+The high-level idea is that every client creates a temporary sequential node under a lock path. The client with the smallest sequence number owns the lock. Other clients wait for the node immediately before them to disappear.
 
-首先，在 Zookeeper 中创建一个持久的路径，例如 `/distributed-lock`。这个路径将作为锁的根节点，所有的锁请求都将在这个节点下创建子节点。
+## Lock acquisition
 
-### 2. 创建临时顺序节点
+The flow looks like this:
 
-当一个客户端想要获得锁时，它会在 `/distributed-lock` 下创建一个临时顺序节点（ephemeral sequential node），例如 `/distributed-lock/lock-0000000001`。
+1. Client creates an ephemeral sequential node under `/locks/my-lock`.
+2. Client lists all children under the lock path.
+3. If its node has the smallest sequence, it owns the lock.
+4. Otherwise, it watches the previous sequence node.
+5. When that previous node disappears, the client checks again.
 
-### 3. 获取前驱节点
+Watching the previous node is important. If every waiting client watched the smallest node, releasing one lock would wake every waiter. That creates unnecessary load and contention.
 
-创建完节点后，客户端需要获取它创建的节点的前一个节点（即序号比当前节点小的最大的节点）。如果当前节点是第一个节点（没有前驱节点），那么它就获得了锁。
+## Why ephemeral nodes matter
 
-### 4. 注册监听器
+An ephemeral node is tied to the client session. If the client crashes or loses its session, ZooKeeper removes the node. That prevents a dead client from holding the lock forever.
 
-如果当前节点不是第一个节点，那么客户端需要在其前驱节点上注册一个 `Watcher`（监听器）。当这个前驱节点被删除时，说明前驱节点对应的客户端已经释放了锁，此时当前客户端可以成为新的锁持有者。
+This is safer than a lock stored as a normal database row without a lease. However, it does not remove every failure mode.
 
-### 5. 释放锁
+## Session expiration
 
-当客户端完成操作后，它需要删除自己创建的节点，从而释放锁。由于节点是临时的，如果客户端意外退出，那么这个节点也会自动被删除，释放锁。
+Session expiration is the subtle part. A client may experience a long pause, network partition, or GC stall. ZooKeeper can expire its session and release the lock while the client still thinks it is running.
 
-### 具体实现示例
+If that client continues to write to a protected resource, two clients may effectively act as lock owners.
 
-下面是一个简单的 Java 代码示例，展示如何使用 Zookeeper 实现分布式锁：
+This is why important distributed locks should use fencing tokens. The sequence number can act as a fencing token if the protected resource rejects writes with an older token.
 
-```java
-import org.apache.zookeeper.*;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
+## Releasing the lock
 
-public class DistributedLockExample implements Watcher {
+To release the lock, the client deletes its own node. If the client exits or the session expires, ZooKeeper deletes the ephemeral node automatically.
 
-    private ZooKeeper zookeeper;
-    private String lockPath = "/distributed-lock";
-    private CountDownLatch connectedSemaphore = new CountDownLatch(1);
+The application should still release explicitly in normal flow. Automatic cleanup is a safety net, not the normal control path.
 
-    @Override
-    public void process(WatchedEvent event) {
-        if (event.getState() == KeeperState.SyncConnected) {
-            connectedSemaphore.countDown();
-        }
-    }
+## ZooKeeper lock properties
 
-    public void connect(String connectionString) throws Exception {
-        zookeeper = new ZooKeeper(connectionString, 5000, this);
-        connectedSemaphore.await();
-    }
+This approach gives:
 
-    public void createLockNode() throws Exception {
-        if (!zookeeper.exists(lockPath, false)) {
-            zookeeper.create(lockPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
-        String lockNode = zookeeper.create(lockPath + "/lock-", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-        System.out.println("Created lock node: " + lockNode);
-    }
+- Fair ordering by sequence number.
+- Automatic cleanup after session loss.
+- Reduced herd effect by watching predecessors.
+- A visible lock queue for debugging.
 
-    public void acquireLock() throws Exception {
-        createLockNode();
-        List<String> children = zookeeper.getChildren(lockPath, false);
-        String minNode = null;
-        for (String child : children) {
-            if (minNode == null || Integer.parseInt(child.substring(5)) < Integer.parseInt(minNode.substring(5))) {
-                minNode = child;
-            }
-        }
-        if (lockPath + "/" + minNode.equals(lockPath + "/lock-" + children.size())) {
-            System.out.println("Acquired lock");
-        } else {
-            // Register watcher on the predecessor node to detect release
-            String predecessor = children.get(children.indexOf(minNode) - 1);
-            zookeeper.getData(lockPath + "/" + predecessor, true, null);
-        }
-    }
+It also requires:
 
-    public void releaseLock() throws Exception {
-        List<String> children = zookeeper.getChildren(lockPath, false);
-        zookeeper.delete(lockPath + "/lock-" + children.size(), -1);
-        System.out.println("Released lock");
-    }
+- Correct session handling.
+- Timeout awareness.
+- Fencing for critical resources.
+- Careful retry behavior.
 
-    public static void main(String[] args) throws Exception {
-        DistributedLockExample example = new DistributedLockExample();
-        example.connect("localhost:2181");
-        example.acquireLock();
-        Thread.sleep(5000); // Simulate some work
-        example.releaseLock();
-        example.zookeeper.close();
-    }
-}
-```
+## When to use it
 
-### 注意事项
+ZooKeeper locks are useful when a system already depends on ZooKeeper and needs coordinated ownership, leader election, or controlled access to a shared resource.
 
-- **并发控制**：确保多个客户端能够正确地竞争锁，并且在释放锁时不会出现竞争条件。
-- **异常处理**：需要处理连接异常、会话过期等情况，确保锁能够正确地释放。
-- **锁的公平性**：根据需求选择是否需要实现公平锁（先进来的请求先获得锁）。
+For simple short-lived application locks, Redis may be easier to operate. For database-row ownership, optimistic locking or transactional updates may be enough.
 
-通过以上步骤，可以实现一个基本的分布式锁。实际应用中可能还需要考虑更多的细节和异常情况处理，以确保锁的稳定性和可靠性。
-
+The rule I use is: choose the locking primitive that matches the failure model of the resource being protected. The lock is only correct if the protected resource can enforce the decision.

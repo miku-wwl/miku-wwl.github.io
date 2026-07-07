@@ -1,97 +1,71 @@
 ---
-title: '高并发限流：固定窗口、滑动窗口、令牌桶与漏桶'
-description: '对比常见限流算法的原理、优缺点和适用场景，帮助在高并发系统中选择合适策略。'
-pubDate: '2026-07-06'
+title: 'Rate limiting strategies: fixed window, sliding window, token bucket, and leaky bucket'
+description: 'A concise comparison of common rate limiting algorithms, their tradeoffs, and the production details that matter.'
+pubDate: '2026-03-12'
 ---
 
-限流是一种常见的技术手段，用于控制请求的速率，防止系统过载或被滥用。限流策略有很多种，常见的有固定窗口计数器（Fixed Window Counter）、滑动窗口计数器（Sliding Window Counter）、令牌桶（Token Bucket）算法和漏桶（Leaky Bucket）算法。下面将详细介绍这些算法的区别及其使用场景。
+# Rate limiting strategies: fixed window, sliding window, token bucket, and leaky bucket
 
-### 1. 固定窗口计数器（Fixed Window Counter）
+Rate limiting is a reliability feature before it is a security feature. It protects downstream services, keeps noisy clients from consuming shared capacity, and gives the platform a predictable way to fail when traffic exceeds the budget.
 
-#### 原理
+The algorithm matters because different workloads need different behavior. Login attempts, public APIs, payment callbacks, and batch imports do not have the same tolerance for bursts.
 
-固定窗口计数器是在一个固定的时间窗口内统计请求的数量。如果请求数量超过设定的阈值，则拒绝新的请求。
+## Fixed window
 
-#### 优点
+Fixed window counters are the simplest option. Count requests for a key during a time window, reset the count when the next window begins, and reject traffic after the limit is reached.
 
-- 实现简单。
+The benefit is operational simplicity. It is easy to implement with Redis `INCR` and `EXPIRE`, and it is easy to explain.
 
-#### 缺点
+The weakness is the boundary burst. A client can send requests at the end of one window and immediately send more at the beginning of the next window. The average rate might be acceptable, but the instantaneous burst can still hurt the service.
 
-- 在窗口切换时，可能会出现突增的情况，导致短时间内的请求被大量拒绝。
+Fixed window is fine for coarse protection, admin tools, or limits where exact smoothness is not important.
 
-#### 使用场景
+## Sliding log
 
-适用于对精确度要求不高，且请求分布较为均匀的场景。
+Sliding log keeps timestamps of recent requests and removes entries outside the rolling window. It is accurate because every request is represented.
 
-### 2. 滑动窗口计数器（Sliding Window Counter）
+The tradeoff is memory and write amplification. A hot client can create many timestamp entries. In Redis, this is usually implemented with a sorted set, where the timestamp is both score and value.
 
-#### 原理
+Sliding log is useful for strict controls such as password reset attempts or sensitive account actions. I would avoid it for very high-throughput API traffic unless the limit cardinality is small.
 
-滑动窗口计数器通过将时间窗口分成多个小的时间段（称为“桶”），每个时间段内统计请求的数量。当请求到来时，计算当前时间段内的请求数量，并累加到总的请求计数中。如果总的请求数量超过了阈值，则拒绝请求。
+## Sliding window counter
 
-#### 优点
+Sliding window counter approximates a rolling window by combining the current window and the previous window with a weight.
 
-- 可以平滑地处理请求突增的情况，避免了固定窗口计数器的突增问题。
-- 更精确地反映了实时请求情况。
+For example, if the current minute is 25 percent complete, the effective count can be:
 
-#### 缺点
+```text
+effective = currentCount + previousCount * 0.75
+```
 
-- 实现相对复杂，需要维护一个时间窗口内的多个时间段的请求计数。
+This is less precise than a sliding log, but it is much cheaper. It also avoids the worst fixed-window boundary burst.
 
-#### 使用场景
+This is a strong default for API gateways and service-level limits.
 
-适用于对请求突发有较高容忍度，并且需要较高精度的场景。
+## Token bucket
 
-### 3. 令牌桶（Token Bucket）
+Token bucket refills tokens at a fixed rate up to a maximum capacity. A request consumes one or more tokens. If no token is available, the request is rejected or delayed.
 
-#### 原理
+The important property is controlled burstiness. The refill rate defines the long-term average, while bucket capacity defines how much burst traffic is allowed.
 
-令牌桶算法通过预先填充一定数量的令牌（tokens）到一个“桶”中，然后按照固定的速率向桶中添加令牌。请求到来时，如果桶中有足够的令牌，则消耗相应数量的令牌并接受请求；否则拒绝请求。
+Token bucket works well for public APIs and workloads where short bursts are normal. It protects the service without making every client behave like a perfectly smooth stream.
 
-#### 优点
+## Leaky bucket
 
-- 可以平滑地处理请求突发情况，同时保证平均请求速率。
-- 支持突发流量，允许短时间内发送大量请求。
+Leaky bucket turns incoming traffic into a steady output rate. Requests enter a queue and leave at a fixed speed. If the queue is full, new requests are rejected.
 
-#### 缺点
+This is useful when the downstream system needs smooth traffic more than burst flexibility. The cost is latency: accepted requests can wait in the bucket.
 
-- 实现稍微复杂一点，需要维护令牌的生成和消费。
+I normally use leaky bucket for background jobs or gateway-to-downstream shaping, not for user-facing APIs where queueing can create poor tail latency.
 
-#### 使用场景
+## Production details
 
-适用于需要同时满足突发流量和平滑请求速率的场景，例如 API 限流、网络流量控制等。
+The algorithm is only half of the implementation. A production limiter also needs:
 
-### 4. 漏桶（Leaky Bucket）
+- A clear key design: user, IP, API token, tenant, endpoint, or a combination.
+- A response contract: HTTP `429`, retry headers, and useful error messages.
+- Observability: allowed, rejected, delayed, and bypassed counts.
+- Safe defaults: fail open or fail closed should be a deliberate choice.
+- Distributed consistency: Redis, gateway-local limits, or layered limits.
 
-#### 原理
-
-漏桶算法将请求放入一个“桶”中，然后以恒定的速度从桶中流出请求。如果桶满了，则新来的请求会被丢弃。
-
-#### 优点
-
-- 简单易懂，容易实现。
-- 可以限制系统的最大吞吐量。
-
-#### 缺点
-
-- 无法处理请求的突发情况，可能会导致大量请求被丢弃。
-
-#### 使用场景
-
-适用于对系统吞吐量有严格限制的场景，例如网络带宽限制。
-
-### 滑动窗口算法与令牌桶的区别
-
-- **滑动窗口算法**：主要用于统计一段时间内的请求频率，适用于需要精确控制请求频率的场景。
-- **令牌桶算法**：主要用于控制请求的速率，支持突发流量，适用于需要同时满足突发流量和平滑请求速率的场景。
-
-### 使用场景对比
-
-- **滑动窗口算法**：适用于需要对请求频率进行精确控制的场景，例如在高并发情况下，需要防止短时间内大量请求导致系统过载。
-- **令牌桶算法**：适用于需要处理请求突发，并且保持平均请求速率的场景，例如在 API 接口中，需要保证一定的请求吞吐量，同时允许短时间内发送大量请求。
-
-### 总结
-
-不同的限流算法各有优缺点，适用于不同的场景。在实际应用中，需要根据系统的具体需求选择合适的限流策略。例如，如果系统需要处理突发流量，并且保证平均请求速率，可以选择令牌桶算法；如果需要精确控制请求频率，可以选择滑动窗口算法。
-
+My usual preference is layered limiting: a cheap local or gateway limit for immediate protection, plus a centralized Redis-backed limit for cross-instance fairness. That avoids making one store responsible for every small decision while still keeping tenant-level control accurate enough.

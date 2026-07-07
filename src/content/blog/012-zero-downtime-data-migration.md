@@ -1,83 +1,94 @@
 ---
-title: '如何不停机进行数据迁移'
-description: '介绍全量迁移、增量同步、双写、校验、灰度切换和回滚，降低大型迁移风险。'
-pubDate: '2026-06-26'
+title: 'Zero-downtime data migration with expand, migrate, and contract'
+description: 'A migration pattern for changing schemas and moving data while keeping old and new application versions safe.'
+pubDate: '2025-09-18'
 ---
 
-在不停机的情况下进行数据迁移是一项复杂的任务，特别是在大型生产环境中。不停机数据迁移的目标是在不影响现有服务的情况下，将数据从旧系统平滑地迁移到新系统。以下是一些常用的方法和技术，可以帮助实现不停机的数据迁移：
+# Zero-downtime data migration with expand, migrate, and contract
 
-### 1. 数据同步与增量迁移
+Zero-downtime migration is less about one clever script and more about compatibility. The database, old application version, and new application version must be able to coexist during the rollout.
 
-#### 方法描述：
+The safest pattern is expand, migrate, and contract.
 
-通过实时数据同步工具将旧系统的数据持续同步到新系统。一旦数据完全同步，可以进行最终的切换操作。
+## Expand
 
-#### 技术工具：
+In the expand phase, add new structures without breaking old code.
 
-- **Debezium**：一个开源的变更数据捕获工具，可以捕捉数据库的变更事件并发布到消息队列中。
-- **Kafka Connect**：可以将数据从各种数据源捕获并导入到 Kafka 中，然后再从 Kafka 导入到目标系统。
-- **Maxwell**：一个基于 MySQL binlog 的数据捕获工具。
+Examples:
 
-#### 步骤：
+- Add a nullable column.
+- Add a new table.
+- Add a new index concurrently where supported.
+- Add a new event field while keeping the old field.
+- Add application code that can read both old and new formats.
 
-1. **初始数据同步**：将旧系统中的所有数据一次性迁移到新系统。
-2. **持续数据同步**：使用数据同步工具捕获旧系统中的任何更改（包括插入、更新和删除操作），并将这些更改实时同步到新系统。
-3. **最终切换**：当确认所有数据都已经同步，并且新系统运行稳定时，进行最终的切换操作。
+The key is backward compatibility. Old code should continue to run after the database change.
 
-### 2. 读写分离与双写
+## Migrate
 
-#### 方法描述：
+In the migrate phase, data is copied or transformed gradually.
 
-在数据迁移期间，同时维护旧系统和新系统，将写操作同时写入两个系统，以保证数据的一致性。一旦数据完全一致，可以将读操作逐渐切换到新系统。
+Important details:
 
-#### 步骤：
+- Backfill in small batches.
+- Track progress.
+- Make the migration idempotent.
+- Avoid long locks.
+- Avoid large transactions.
+- Validate row counts and checksums.
+- Keep normal production traffic in mind.
 
-1. **双写阶段**：将写操作同时写入旧系统和新系统，确保数据的一致性。
-2. **切换读操作**：逐渐将读操作从旧系统切换到新系统，可以先进行一部分流量的切分，观察系统运行情况。
-3. **最终切换**：当确认新系统稳定可靠后，完全停止旧系统的写操作，并将所有流量切换到新系统。
+For large tables, the migration job should be pauseable and resumable. A migration that can only run perfectly from start to finish is not production-friendly.
 
-### 3. 数据复制工具
+## Dual write and dual read
 
-#### 方法描述：
+Sometimes the application must write both old and new formats during the transition. This can work, but it must be designed carefully.
 
-使用专业的数据复制工具进行数据迁移，这些工具通常支持不停机的数据迁移。
+Dual writes need:
 
-#### 技术工具：
+- Clear ownership of conflict resolution.
+- Idempotency.
+- Monitoring for write mismatch.
+- A repair path.
+- A rollback plan.
 
-- **Oracle GoldenGate**：一款企业级的数据复制工具，支持异构环境下的数据迁移。
-- **MySQL Workbench**：可以进行数据库的备份和恢复，支持不停机迁移。
-- **MuleSoft Anypoint DataWeave**：一个强大的数据集成平台，支持数据迁移。
+Dual reads can reduce risk. The application may read from the new location first and fall back to the old location while migration is still running.
 
-### 4. 云服务提供商的迁移工具
+## Contract
 
-#### 方法描述：
+The contract phase removes the old structure after confidence is high.
 
-利用云服务提供商提供的迁移工具和服务进行数据迁移。
+This should happen in a later release, not immediately after the new code is deployed. Waiting gives time to detect edge cases and roll back if needed.
 
-#### 技术工具：
+Examples:
 
-- **AWS DMS (Database Migration Service)**：支持多种数据库引擎之间的迁移，并且可以实现不停机的数据迁移。
-- **Google Cloud Data Transfer Service**：支持将数据从本地环境迁移到 Google Cloud Platform。
+- Stop writing old columns.
+- Remove fallback reads.
+- Drop old indexes.
+- Drop old columns or tables.
+- Remove migration code.
 
-### 5. 事务日志分析
+The contract phase is where many teams get impatient. That impatience is how rollback becomes impossible.
 
-#### 方法描述：
+## Validation
 
-通过分析旧系统的事务日志，将事务日志中的变更应用到新系统中，以保持数据的一致性。
+A migration is not complete until it is verified.
 
-#### 步骤：
+Good validation includes:
 
-1. **采集事务日志**：在数据迁移过程中采集旧系统的事务日志。
-2. **解析事务日志**：解析事务日志中的变更操作。
-3. **应用变更**：将解析后的变更应用到新系统中。
+- Count comparison.
+- Checksums by range.
+- Sampled record comparison.
+- Business-level reconciliation.
+- Error dashboards.
+- Alerts for mismatch drift.
 
-### 注意事项
+Validation should run during and after the migration. It is easier to repair small drift early than to discover large drift after cleanup.
 
-- **数据一致性**：在整个迁移过程中，需要确保数据的一致性，避免数据丢失或不一致。
-- **监控与测试**：在迁移过程中，需要持续监控新系统的运行状况，并进行充分的测试，确保新系统能够正常工作。
-- **回滚计划**：制定详细的回滚计划，以防迁移过程中出现问题时能够及时回滚到旧系统。
+## Rollback mindset
 
-### 总结
+Every phase should answer: what happens if this fails?
 
-不停机的数据迁移是一项复杂的技术任务，需要综合考虑多种技术和方案。根据实际的业务需求和技术环境选择最适合的迁移策略，并确保在整个迁移过程中数据的一致性和系统的稳定性。
+If the expand phase fails, old code should still work. If migration fails, it should stop safely and resume later. If the new read path fails, the system should be able to return to the old path until the contract phase removes it.
 
+Zero-downtime migration is successful when users do not notice it and operators are not afraid to pause it.

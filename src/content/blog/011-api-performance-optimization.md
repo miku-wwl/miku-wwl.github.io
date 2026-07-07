@@ -1,78 +1,91 @@
 ---
-title: '如何提升接口性能'
-description: '从代码、数据库、缓存、异步化、批处理、限流和监控入手改善接口响应时间。'
-pubDate: '2026-06-27'
+title: 'Improving API performance without guessing'
+description: 'A structured approach to API latency: measure first, set budgets, optimize database access, reduce payloads, and protect dependencies.'
+pubDate: '2026-01-20'
 ---
 
-提升接口性能是一个多方面的任务，涉及到了解现有系统的瓶颈、优化代码、使用合适的工具和技术等多个方面。以下是一些常见的方法和技巧，可以帮助提高接口性能：
+# Improving API performance without guessing
 
-### 1. 代码层面的优化
+API performance work should begin with a latency budget. Without a budget, every optimization feels important and none of them are accountable.
 
-#### 1.1 减少不必要的计算
-- **去除不必要的计算**：分析接口逻辑，去除不必要的计算或查询，尤其是那些在循环中重复执行的计算。
-- **提前返回**：在函数或方法中尽早返回结果，减少不必要的后续处理。
+For example, a 300 ms endpoint budget might be split into authentication, application logic, database calls, downstream calls, serialization, and network time. Once the budget is visible, the slow part has nowhere to hide.
 
-#### 1.2 数据处理优化
-- **懒加载**：在加载数据时采用懒加载策略，只加载当前需要的数据。
-- **分页和分批处理**：对于大数据量的操作，采用分页或分批处理的方式，减少一次性加载的数据量。
+## Measure the path
 
-#### 1.3 缓存机制
-- **使用缓存**：合理使用缓存技术（如Redis、Memcached），缓存高频访问的数据，减少数据库访问次数。
-- **本地缓存**：使用本地缓存（如ConcurrentHashMap）来存储热点数据，减少远程调用。
+I start with tracing or structured timing:
 
-### 2. 数据库层面的优化
+- Total request latency.
+- Database query time.
+- Downstream HTTP or RPC time.
+- Serialization time.
+- Cache hit rate.
+- Queue wait time.
+- Thread pool saturation.
 
-#### 2.1 索引优化
-- **合理添加索引**：为频繁查询的字段添加索引，提高查询速度。
-- **避免索引过多**：过多的索引会影响写入性能，需要权衡索引的数量。
+Average latency is not enough. Tail latency matters because users and upstream services feel the slow requests.
 
-#### 2.2 查询优化
-- **SQL语句优化**：使用合适的SQL语句，避免使用SELECT *，尽量减少JOIN操作。
-- **批量操作**：对于批量操作，使用批量插入、批量更新等方式，减少数据库交互次数。
+## Fix database access
 
-#### 2.3 数据库配置
-- **调整数据库配置**：根据实际情况调整数据库的配置参数，如连接池大小、缓存大小等。
-- **分区表**：对于大数据表，可以采用分区表的方式，提高查询性能。
+Database work is often the largest part of backend latency.
 
-### 3. 架构层面的优化
+Common fixes include:
 
-#### 3.1 异步处理
-- **异步调用**：对于耗时操作，可以采用异步调用的方式，如使用消息队列（RabbitMQ、Kafka等）。
-- **多线程或多进程**：合理使用多线程或多进程处理并发请求，提高系统的吞吐量。
+- Add or adjust indexes based on execution plans.
+- Avoid N+1 queries.
+- Limit selected columns.
+- Use keyset pagination for deep pages.
+- Split list and detail endpoints.
+- Cache stable reference data.
+- Keep transactions short.
 
-#### 3.2 负载均衡
-- **负载均衡**：使用负载均衡器（如Nginx、HAProxy）来分发请求到多个后端服务器，提高系统的可用性和性能。
-- **横向扩展**：通过增加服务器的数量来分担请求压力，提高系统的处理能力。
+The correct fix depends on the plan and data distribution. Adding indexes blindly can slow writes and still miss the query pattern.
 
-#### 3.3 微服务架构
-- **微服务化**：将大型应用拆分成多个小型服务，每个服务专注于单一职责，提高系统的可维护性和扩展性。
+## Reduce payload cost
 
-### 4. 网络层面的优化
+Large payloads hurt in multiple places: database, application memory, serialization, network, and client parsing.
 
-#### 4.1 CDN
-- **CDN加速**：使用CDN（内容分发网络）来缓存静态资源，减少用户请求响应时间。
+Useful patterns:
 
-#### 4.2 HTTP协议优化
-- **HTTP/2**：使用HTTP/2协议，支持多路复用，减少TCP连接建立的开销。
-- **压缩传输**：对传输的数据进行压缩，减少带宽使用。
+- Return only fields the client needs.
+- Use pagination.
+- Compress large responses when appropriate.
+- Avoid embedding large nested collections in list endpoints.
+- Prefer stable response contracts over ad-hoc expansion.
 
-### 5. 监控与测试
+The fastest response is often the one that does less work.
 
-#### 5.1 监控
-- **性能监控**：使用性能监控工具（如Prometheus、Grafana）来监控系统的性能指标，及时发现问题。
-- **日志分析**：通过分析日志来定位性能瓶颈。
+## Cache deliberately
 
-#### 5.2 测试
-- **性能测试**：定期进行性能测试（如使用JMeter、LoadRunner等工具），模拟高并发场景，发现性能瓶颈。
-- **代码审查**：定期进行代码审查，确保代码质量，减少潜在的性能问题。
+Caching can be powerful, but it should have a clear purpose:
 
-### 6. 硬件层面的优化
+- Reduce database load.
+- Hide downstream latency.
+- Protect a hot read path.
+- Store expensive computed results.
 
-#### 6.1 硬件升级
-- **硬件升级**：根据实际需求升级服务器硬件，如增加CPU核心数、增大内存等。
-- **SSD存储**：使用SSD存储来提高磁盘读写速度。
+Every cache needs invalidation rules, TTL, metrics, and a failure behavior. A cache that silently serves stale critical data can be worse than no cache.
 
-### 总结
+## Protect downstream dependencies
 
-提升接口性能是一个系统工程，需要从多个角度入手。在实际应用中，可以根据具体情况选择合适的优化方案，并持续监控系统的性能，及时调整优化策略。
+An API can be slow because another service is slow. Defensive patterns include:
 
+- Timeouts.
+- Bounded retries with jitter.
+- Circuit breakers.
+- Bulkheads.
+- Fallbacks for non-critical data.
+- Request hedging only when the cost is understood.
+
+Retries deserve special care. Retrying a slow dependency under load can turn a partial failure into a larger outage.
+
+## Optimize the system, not one method
+
+After a fix, I want to see the effect in production-like data:
+
+- Did p95 and p99 improve?
+- Did error rate change?
+- Did database load move somewhere else?
+- Did cache hit rate improve?
+- Did the user-visible flow get faster?
+
+API performance is a loop: measure, change, verify, and keep the evidence. Guessing feels faster at the start, but measurement is what gets the system reliably faster.

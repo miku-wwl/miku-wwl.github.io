@@ -1,107 +1,85 @@
 ---
-title: '订单表每天新增 500W 数据，分库分表如何设计'
-description: '围绕订单场景分析水平拆分、分片键、路由、扩容、全局 ID 和查询复杂度。'
-pubDate: '2026-06-29'
+title: 'Designing sharding for an order table with millions of new rows per day'
+description: 'How to choose a shard key, route queries, generate IDs, support operations, and migrate safely.'
+pubDate: '2024-08-16'
 ---
 
-处理每天新增 500 万条数据的订单表，如果不采取适当的分库分表策略，将会对单一数据库造成极大的压力，导致性能瓶颈。因此，合理的分库分表设计非常重要。以下是一些建议的设计方案：
+# Designing sharding for an order table with millions of new rows per day
 
-### 1. 水平分割（Sharding）
+An order table that receives millions of rows per day will eventually hit limits in storage, index size, query latency, backup time, and operational safety. Sharding can help, but it also makes the system more complex. The design should start from access patterns, not from table size alone.
 
-水平分割指的是将一个大的表拆分成多个较小的表，每个表只包含原表的一部分数据。这种方式可以有效地分散数据量和访问压力。
+The first question is: how will the data be queried?
 
-#### 1.1 数据分区（Partitioning）
+## Access patterns
 
-数据分区是在单个数据库内部实现的水平分割方式。可以使用 MySQL 内置的分区功能，如范围分区（RANGE）、列表分区（LIST）、散列分区（HASH）或键分区（KEY）。
+Typical order access patterns include:
 
-##### 示例代码（范围分区）：
+- Query by order ID.
+- Query by user ID.
+- Query by merchant or tenant.
+- Query recent orders by time range.
+- Query payment or fulfillment status.
+- Export orders for operations.
+- Reconcile orders with external systems.
 
-```sql
-CREATE TABLE orders (
-    order_id INT PRIMARY KEY,
-    customer_id INT,
-    order_date DATE,
-    ...
-)
-PARTITION BY RANGE(YEAR(order_date))
-(
-    PARTITION p0 VALUES LESS THAN (2020),
-    PARTITION p1 VALUES LESS THAN (2021),
-    PARTITION p2 VALUES LESS THAN (2022),
-    ...
-);
-```
+No single shard key is perfect for every pattern. A good design optimizes the most important path and provides secondary mechanisms for the rest.
 
-#### 1.2 数据分片（Sharding）
+## Choosing a shard key
 
-数据分片是将数据分布在不同的物理数据库实例上。可以使用应用程序层或者中间件层来实现数据的路由和管理。
+`user_id` is a common shard key when most queries are user-centric. It keeps one user's orders together and makes user order history efficient.
 
-##### 分片策略
+`order_id` can work if the ID embeds shard information. It is excellent for direct lookup, but it does not help user history unless there is a mapping table or secondary index.
 
-- **按时间分片**：例如，将不同年份的数据存储在不同的数据库中。
-- **按范围分片**：例如，将订单 ID 按照某个区间划分到不同的数据库中。
-- **按哈希分片**：使用哈希算法（如 MD5、SHA-256）对订单 ID 或者其他唯一标识进行哈希运算，然后根据哈希结果分配到不同的数据库。
+Time-based sharding is attractive for archival and recent queries, but it can create hot shards if all new writes target the same partition.
 
-##### 示例代码（按哈希分片）：
+For many order systems, I prefer an order ID that contains routing information, plus a user-order index for user history. That keeps direct lookup fast and makes common user queries manageable.
 
-```java
-public Database getDatabaseForOrder(long orderId) {
-    int shardIndex = Math.abs(orderId % numberOfShards);
-    return databases[shardIndex];
-}
-```
+## Avoiding hot shards
 
-### 2. 垂直分割（Vertical Partitioning）
+A shard key must distribute writes. If a key is too correlated with time or one large tenant, the system can overload one shard while others are idle.
 
-垂直分割是指将一个表按照列来拆分成多个表，每个表包含原表的一部分列。这种方式可以减轻单一表的宽度，提高查询效率。
+Mitigations include:
 
-#### 2.1 表垂直分割
+- Hashing the shard key.
+- Adding virtual buckets.
+- Splitting large tenants.
+- Separating hot tenants from normal tenants.
+- Using time buckets only inside a broader hash strategy.
 
-将订单表拆分为多个表，例如订单基本信息表、订单详情表等。
+The routing strategy should be stable enough to avoid moving old data frequently.
 
-### 3. 分库分表结合使用
+## ID generation
 
-在实际应用中，往往需要结合水平分割和垂直分割来设计分库分表方案。例如：
+Order IDs should be globally unique and useful for routing. Options include:
 
-#### 3.1 水平分库
+- Snowflake-style IDs.
+- Database sequences per shard with shard prefix.
+- UUID or ULID.
+- Dedicated ID service.
 
-将订单表按照时间或订单 ID 分布在不同的数据库实例上。
+Snowflake-style IDs are popular because they are sortable by time and can include machine or shard information. The main operational concern is clock behavior.
 
-#### 3.2 垂直分库
+## Cross-shard queries
 
-将订单相关的表（如订单表、订单详情表、订单支付表等）分布在不同的数据库实例上。
+Sharding makes cross-shard queries expensive. Product requirements should acknowledge this early.
 
-### 4. 中间件支持
+If operations need global search, a separate search index or reporting store may be better than querying every shard. If finance needs reconciliation, a downstream analytics pipeline may be more appropriate than running heavy SQL on production shards.
 
-为了简化开发人员的负担，可以使用一些中间件来帮助管理和路由分库分表的数据。常见的中间件有：
+The transactional database should serve transactional access patterns. Reporting and search often deserve their own storage model.
 
-- **MyCAT**：开源的分布式数据库中间件，支持分库分表。
-- **ShardingSphere**：阿里巴巴开源的分布式数据库中间件，支持多种分库分表策略。
-- **TiDB**：一款开源的分布式数据库，支持水平扩展和高可用性。
+## Migration plan
 
-### 示例架构设计
+Moving from a single order table to sharded storage should be incremental:
 
-假设我们需要支持每天新增 500 万条订单数据，我们可以设计如下架构：
+1. Add a routing layer in the application.
+2. Dual-write new data if necessary.
+3. Backfill historical data shard by shard.
+4. Validate counts and checksums.
+5. Switch reads gradually.
+6. Keep rollback possible until confidence is high.
 
-1. **水平分库**：假设每个数据库实例最多支持 100 万条数据/天，那么至少需要 5 个数据库实例。
-2. **垂直分库**：将订单表拆分为订单基本信息表、订单详情表、订单支付表等，每个表分别存储在不同的数据库实例上。
-3. **中间件**：使用 ShardingSphere 或 MyCAT 等中间件来实现数据的路由和管理。
+The migration must be observable. Every mismatch should have enough context to repair data safely.
 
-### 示例代码（使用 ShardingSphere）
+## Final thought
 
-```java
-// ShardingSphere 配置示例
-spring.shardingsphere.sharding.tables.t_order.actual-data-nodes=ds$->{0..4}.t_order_$->{0..1}
-
-// 分片策略配置
-spring.shardingsphere.sharding.tables.t_order.database-strategy.inline.sharding-column=order_id
-spring.shardingsphere.sharding.tables.t_order.database-strategy.inline.algorithm-expression=ds${order_id % 5}
-
-spring.shardingsphere.sharding.tables.t_order.table-strategy.inline.sharding-column=order_id
-spring.shardingsphere.sharding.tables.t_order.table-strategy.inline.algorithm-expression=t_order_${order_id % 2}
-```
-
-### 总结
-
-对于每天新增 500 万条数据的订单表，合理的分库分表设计可以显著提高系统的性能和稳定性。通过结合水平分割和垂直分割，并使用中间件来简化数据管理，可以有效地应对大规模数据的挑战。在实际部署中，还需要根据具体的业务需求和技术栈来进行详细的设计和调整。
-
+Sharding is not a performance decoration. It is a long-term ownership decision. Once the data is split, every query, migration, backup, and incident response path must understand the split. The best sharding design is the one that matches real access patterns and keeps operational work predictable.

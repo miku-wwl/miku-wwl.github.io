@@ -1,97 +1,93 @@
 ---
-title: '线上几百万消息积压时如何处理'
-description: '从扩容消费者、定位瓶颈、批量消费、降级和补偿等角度处理 MQ 大规模积压。'
-pubDate: '2026-07-05'
+title: 'Handling a large message backlog in production'
+description: 'A practical incident playbook for stabilizing producers, scaling consumers, isolating poison messages, and draining a queue safely.'
+pubDate: '2025-11-07'
 ---
 
-在线上系统中出现几百万条消息积压的情况通常是由于消息队列（如 RabbitMQ、Kafka 等）的消费者处理能力不足、网络故障、系统故障或者其他原因导致的。处理积压的消息需要综合考虑系统的当前状态、积压的原因以及可能的解决方案。以下是一些常见的处理积压消息的策略：
+# Handling a large message backlog in production
 
-### 1. 增加消费者实例
+A message backlog is not only a queue problem. It is usually a symptom of a system that has lost balance: producers are faster than consumers, consumers are failing, partitions are skewed, or downstream dependencies are slow.
 
-#### 方法描述：
+The first rule is simple: do not blindly add consumers before understanding why the backlog appeared. More consumers can amplify a database bottleneck, increase retry storms, or make ordering problems worse.
 
-通过增加消费者实例的数量来提高处理能力，从而加快处理积压的消息。
+## Confirm the shape of the incident
 
-#### 实施步骤：
+I start by answering a few questions:
 
-1. **评估当前负载**：确定当前消费者的负载情况，了解每个消费者实例的处理能力。
-2. **横向扩展**：根据需要增加消费者实例的数量，可以是现有的消费者集群的扩展，也可以是新的消费者集群。
-3. **均衡负载**：确保新增的消费者实例能够均衡地分担消息处理任务，可以使用负载均衡器或者重新配置消息队列的分发策略。
+- Is the backlog growing, stable, or shrinking?
+- Which topic, partition, stream, or consumer group is affected?
+- Is the problem global or isolated to one tenant or key range?
+- Are consumers slow, failing, or paused?
+- Did traffic increase, a deployment happen, or a downstream dependency degrade?
 
-### 2. 提升单个消费者处理能力
+These questions decide whether the right action is throttling producers, scaling consumers, fixing a poison message, or protecting a dependency.
 
-#### 方法描述：
+## Stabilize ingestion
 
-通过优化消费者代码、改进处理逻辑或者升级硬件资源来提高单个消费者的处理能力。
+If the backlog is still growing and the consumer side is already under pressure, stabilize the input first.
 
-#### 实施步骤：
+Options include:
 
-1. **代码优化**：检查消费者代码是否存在性能瓶颈，优化处理逻辑，减少不必要的 I/O 操作或数据库交互。
-2. **硬件升级**：增加 CPU 核心数、内存或者磁盘 I/O 能力，提高单个消费者的处理能力。
-3. **异步处理**：对于耗时的操作，可以考虑使用异步处理的方式来提高处理效率。
+- Temporarily rate limit producers.
+- Disable non-critical producers.
+- Reduce batch import speed.
+- Move low-priority traffic to a separate topic or queue.
+- Apply backpressure to API endpoints that enqueue work.
 
-### 3. 临时增加资源
+This step is not about solving the whole incident. It buys time and prevents the queue from becoming impossible to drain.
 
-#### 方法描述：
+## Check consumer health
 
-在短期内增加临时资源来处理积压的消息，例如使用临时的消费者实例或者租用云服务。
+Consumer lag can increase because consumers are not running, but it can also increase because every message takes too long.
 
-#### 实施步骤：
+Useful signals include:
 
-1. **租用云服务**：租用云上的计算资源来临时处理积压的消息。
-2. **临时消费者**：部署临时的消费者实例来帮助处理积压的消息，处理完毕后可以关闭这些临时实例。
+- Processing latency per message.
+- Error rate and retry count.
+- Downstream database or API latency.
+- Consumer CPU, memory, and GC behavior.
+- Partition distribution across consumer instances.
+- Dead-letter queue volume.
 
-### 4. 消息重试策略
+If consumers are failing repeatedly on the same message, scaling will not help. The system needs poison-message isolation, schema compatibility checks, or a code rollback.
 
-#### 方法描述：
+## Scale carefully
 
-对于长时间未被处理的消息，可以启用重试机制，确保消息能够被处理。
+Adding consumers helps only when parallelism is available. In Kafka, consumer concurrency is bounded by partition count for a consumer group. If a topic has 12 partitions, starting 50 consumers will not give 50 active consumers.
 
-#### 实施步骤：
+When scaling does make sense, I prefer gradual changes:
 
-1. **启用消息重试**：在消息队列中启用消息重试策略，对于未能被及时处理的消息进行重试。
-2. **死信队列**：设置死信队列（Dead Letter Queue, DLQ），将无法处理的消息移至 DLQ 中，避免无限重试导致的问题。
+1. Increase consumers by a small step.
+2. Watch downstream dependency pressure.
+3. Watch lag reduction rate.
+4. Repeat only if the system remains healthy.
 
-### 5. 批量处理
+For batch consumers, increasing batch size can be more effective than increasing instance count. But larger batches can also increase lock time, transaction size, and retry cost.
 
-#### 方法描述：
+## Isolate bad messages
 
-将积压的消息批量处理，减少处理次数，提高处理效率。
+A single bad message should not block the whole stream forever. The consumer should have a clear retry policy and a dead-letter path.
 
-#### 实施步骤：
+Good retry behavior usually includes:
 
-1. **批量读取**：修改消费者逻辑，使其能够批量读取消息。
-2. **批量处理**：在处理逻辑中支持批量处理，减少与外部系统的交互次数。
+- Limited retries for deterministic failures.
+- Exponential backoff for temporary dependencies.
+- Idempotent processing.
+- Dead-letter records with enough context for replay.
+- Alerts when DLQ volume exceeds a small threshold.
 
-### 6. 人工介入
+The worst design is infinite retry without visibility. It hides the real issue and keeps the consumer group busy doing work that cannot succeed.
 
-#### 方法描述：
+## Drain and verify
 
-对于某些特殊的消息或者异常情况，可能需要人工介入来解决。
+After the immediate cause is fixed, the backlog still needs to be drained safely. I watch the lag slope instead of only the absolute lag. If lag is falling at a predictable rate and downstream systems are stable, the incident is under control.
 
-#### 实施步骤：
+The post-incident work matters:
 
-1. **异常检测**：设置监控报警机制，检测到异常情况时及时通知相关人员。
-2. **人工处理**：对于无法通过自动化处理的消息，由人工介入进行处理。
+- Add lag-based alerts.
+- Add producer rate controls.
+- Document replay and DLQ procedures.
+- Load test consumers with realistic downstream latency.
+- Review partition keys for skew.
 
-### 7. 数据清洗与过滤
-
-#### 方法描述：
-
-如果积压的消息中包含大量的无效消息或者重复消息，可以通过数据清洗和过滤来减少处理的工作量。
-
-#### 实施步骤：
-
-1. **数据清洗**：编写脚本或工具对积压的消息进行清洗，去除无效或重复的消息。
-2. **过滤机制**：在消息队列中添加过滤机制，避免无效或重复的消息再次进入队列。
-
-### 注意事项
-
-- **监控与报警**：在整个处理过程中，需要持续监控消息队列的状态，并设置相应的报警机制，以便及时发现并解决问题。
-- **回滚计划**：制定详细的回滚计划，以防处理过程中出现问题时能够及时恢复到之前的稳定状态。
-- **测试验证**：在实施任何策略之前，最好先在一个独立的环境中进行测试验证，确保方案的有效性和安全性。
-
-### 总结
-
-处理线上几百万条消息积压的情况需要综合考虑多方面的因素，包括但不限于消费者实例的数量、单个消费者的处理能力、临时资源的支持、消息重试策略、批量处理、人工介入以及数据清洗等。选择最合适的方法并结合实际情况来实施，才能有效解决积压问题。
-
+A queue gives the system buffer, not infinite capacity. The healthiest backlog strategy is to make overload visible early and make recovery boring.
