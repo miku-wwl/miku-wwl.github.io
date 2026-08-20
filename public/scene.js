@@ -13,6 +13,7 @@ const COLORS = {
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const isSmallViewport = () => window.matchMedia('(max-width: 720px)').matches;
 let glowTexture;
+const emblemTextures = new Map();
 
 function getGlowTexture() {
 	if (glowTexture) return glowTexture;
@@ -30,6 +31,26 @@ function getGlowTexture() {
 	context.fillRect(0, 0, 128, 128);
 	glowTexture = new THREE.CanvasTexture(canvas);
 	return glowTexture;
+}
+
+function getEmblemTexture(letter, color) {
+	const key = `${letter}:${color}`;
+	if (emblemTextures.has(key)) return emblemTextures.get(key);
+	const canvas = document.createElement('canvas');
+	canvas.width = 256;
+	canvas.height = 256;
+	const context = canvas.getContext('2d');
+	context.clearRect(0, 0, 256, 256);
+	context.font = '700 148px monospace';
+	context.textAlign = 'center';
+	context.textBaseline = 'middle';
+	context.shadowColor = `#${color.toString(16).padStart(6, '0')}`;
+	context.shadowBlur = 18;
+	context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+	context.fillText(letter, 128, 132);
+	const texture = new THREE.CanvasTexture(canvas);
+	emblemTextures.set(key, texture);
+	return texture;
 }
 
 function seededRandom(seed) {
@@ -113,6 +134,222 @@ function surfaceMaterial(graph, color, opacity = 0.6, pattern = 1, blending = TH
 		blending,
 		side: THREE.DoubleSide,
 	}));
+}
+
+function planetMaterial(graph, options = {}) {
+	const ocean = new THREE.Color(options.ocean || 0x063b49);
+	const oceanLight = new THREE.Color(options.oceanLight || 0x0bc7b3);
+	const land = new THREE.Color(options.land || COLORS.green);
+	const landShadow = new THREE.Color(options.landShadow || 0x075a45);
+	return registerMaterial(graph, new THREE.ShaderMaterial({
+		uniforms: {
+			uOcean: { value: ocean },
+			uOceanLight: { value: oceanLight },
+			uLand: { value: land },
+			uLandShadow: { value: landShadow },
+			uTime: { value: 0 },
+			uOpacity: { value: options.opacity || 0.96 },
+		},
+		vertexShader: [
+			'varying vec3 vPlanetNormal;',
+			'varying vec3 vPlanetPosition;',
+			'varying vec3 vWorldPosition;',
+			'void main() {',
+			'  vPlanetNormal = normalize(normalMatrix * normal);',
+			'  vPlanetPosition = normalize(position);',
+			'  vec4 worldPosition = modelMatrix * vec4(position, 1.0);',
+			'  vWorldPosition = worldPosition.xyz;',
+			'  gl_Position = projectionMatrix * viewMatrix * worldPosition;',
+			'}',
+		].join('\n'),
+		fragmentShader: [
+			'uniform vec3 uOcean;',
+			'uniform vec3 uOceanLight;',
+			'uniform vec3 uLand;',
+			'uniform vec3 uLandShadow;',
+			'uniform float uTime;',
+			'uniform float uOpacity;',
+			'varying vec3 vPlanetNormal;',
+			'varying vec3 vPlanetPosition;',
+			'varying vec3 vWorldPosition;',
+			'float hash13(vec3 p) {',
+			'  p = fract(p * 0.1031);',
+			'  p += dot(p, p.yzx + 33.33);',
+			'  return fract((p.x + p.y) * p.z);',
+			'}',
+			'float noise3(vec3 p) {',
+			'  vec3 i = floor(p);',
+			'  vec3 f = fract(p);',
+			'  f = f * f * (3.0 - 2.0 * f);',
+			'  float n000 = hash13(i);',
+			'  float n100 = hash13(i + vec3(1.0, 0.0, 0.0));',
+			'  float n010 = hash13(i + vec3(0.0, 1.0, 0.0));',
+			'  float n110 = hash13(i + vec3(1.0, 1.0, 0.0));',
+			'  float n001 = hash13(i + vec3(0.0, 0.0, 1.0));',
+			'  float n101 = hash13(i + vec3(1.0, 0.0, 1.0));',
+			'  float n011 = hash13(i + vec3(0.0, 1.0, 1.0));',
+			'  float n111 = hash13(i + vec3(1.0, 1.0, 1.0));',
+			'  float x00 = mix(n000, n100, f.x);',
+			'  float x10 = mix(n010, n110, f.x);',
+			'  float x01 = mix(n001, n101, f.x);',
+			'  float x11 = mix(n011, n111, f.x);',
+			'  return mix(mix(x00, x10, f.y), mix(x01, x11, f.y), f.z);',
+			'}',
+			'float fbm(vec3 p) {',
+			'  float value = 0.0;',
+			'  float amplitude = 0.5;',
+			'  for (int index = 0; index < 4; index++) {',
+			'    value += amplitude * noise3(p);',
+			'    p = p * 2.03 + vec3(13.1, 7.7, 4.3);',
+			'    amplitude *= 0.5;',
+			'  }',
+			'  return value;',
+			'}',
+			'void main() {',
+			'  vec3 normal = normalize(vPlanetPosition);',
+			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
+			'  float terrain = fbm(normal * 3.15 + vec3(0.0, uTime * 0.004, 0.0));',
+			'  float detail = fbm(normal * 7.2 - vec3(uTime * 0.006, 0.0, uTime * 0.003));',
+			'  float landMask = smoothstep(0.45, 0.60, terrain * 0.82 + detail * 0.18);',
+			'  float coast = smoothstep(0.40, 0.53, terrain * 0.8 + detail * 0.2) - landMask;',
+			'  float micro = fbm(normal * 19.0 + vec3(3.0, 8.0, 1.0));',
+			'  vec3 oceanColor = mix(uOcean, uOceanLight, smoothstep(0.28, 0.8, detail) * 0.5);',
+			'  vec3 landColor = mix(uLandShadow, uLand, smoothstep(0.3, 0.7, detail));',
+			'  vec3 color = mix(oceanColor, landColor, landMask);',
+			'  color += uOceanLight * coast * 0.32;',
+			'  float light = 0.42 + 0.58 * max(dot(normal, normalize(vec3(-0.45, 0.62, 0.92))), 0.0);',
+			'  float facing = max(dot(normalize(vPlanetNormal), viewDirection), 0.0);',
+			'  float rim = pow(1.0 - facing, 2.6);',
+			'  float nightLights = smoothstep(0.66, 0.84, micro) * (1.0 - light) * (0.18 + landMask * 0.85);',
+			'  float specular = pow(max(dot(reflect(-viewDirection, normal), normalize(vec3(-0.45, 0.62, 0.92))), 0.0), 26.0);',
+			'  color *= 0.58 + light * 0.52;',
+			'  color += uOceanLight * nightLights + uOceanLight * specular * 0.42 + uLand * rim * 0.14;',
+			'  gl_FragColor = vec4(color, uOpacity);',
+			'}',
+		].join('\n'),
+		transparent: true,
+		depthWrite: true,
+		blending: THREE.NormalBlending,
+		side: THREE.FrontSide,
+	}));
+}
+
+function cloudMaterial(graph, color = COLORS.white) {
+	return registerMaterial(graph, new THREE.ShaderMaterial({
+		uniforms: { uColor: { value: new THREE.Color(color) }, uTime: { value: 0 } },
+		vertexShader: [
+			'varying vec3 vCloudNormal;',
+			'varying vec3 vWorldPosition;',
+			'void main() {',
+			'  vCloudNormal = normalize(normalMatrix * normal);',
+			'  vec4 worldPosition = modelMatrix * vec4(position, 1.0);',
+			'  vWorldPosition = worldPosition.xyz;',
+			'  gl_Position = projectionMatrix * viewMatrix * worldPosition;',
+			'}',
+		].join('\n'),
+		fragmentShader: [
+			'uniform vec3 uColor;',
+			'uniform float uTime;',
+			'varying vec3 vCloudNormal;',
+			'varying vec3 vWorldPosition;',
+			'float hash13(vec3 p) {',
+			'  p = fract(p * 0.1031);',
+			'  p += dot(p, p.yzx + 33.33);',
+			'  return fract((p.x + p.y) * p.z);',
+			'}',
+			'float noise3(vec3 p) {',
+			'  vec3 i = floor(p);',
+			'  vec3 f = fract(p);',
+			'  f = f * f * (3.0 - 2.0 * f);',
+			'  float a = mix(hash13(i), hash13(i + vec3(1.0, 0.0, 0.0)), f.x);',
+			'  float b = mix(hash13(i + vec3(0.0, 1.0, 0.0)), hash13(i + vec3(1.0, 1.0, 0.0)), f.x);',
+			'  float c = mix(hash13(i + vec3(0.0, 0.0, 1.0)), hash13(i + vec3(1.0, 0.0, 1.0)), f.x);',
+			'  float d = mix(hash13(i + vec3(0.0, 1.0, 1.0)), hash13(i + vec3(1.0, 1.0, 1.0)), f.x);',
+			'  return mix(mix(a, b, f.y), mix(c, d, f.y), f.z);',
+			'}',
+			'void main() {',
+			'  vec3 normal = normalize(vCloudNormal);',
+			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
+			'  float cloud = smoothstep(0.49, 0.64, noise3(normal * 4.8 + vec3(uTime * 0.012, 0.0, uTime * 0.006)));',
+			'  float rim = pow(1.0 - max(dot(normal, viewDirection), 0.0), 2.0);',
+			'  gl_FragColor = vec4(uColor, cloud * (0.16 + rim * 0.16));',
+			'}',
+		].join('\n'),
+		transparent: true,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+		side: THREE.FrontSide,
+	}));
+}
+
+function atmosphereMaterial(graph, color = COLORS.cyan, opacity = 0.46) {
+	return registerMaterial(graph, new THREE.ShaderMaterial({
+		uniforms: { uColor: { value: new THREE.Color(color) }, uOpacity: { value: opacity } },
+		vertexShader: [
+			'varying vec3 vNormal;',
+			'varying vec3 vWorldPosition;',
+			'void main() {',
+			'  vNormal = normalize(normalMatrix * normal);',
+			'  vec4 worldPosition = modelMatrix * vec4(position, 1.0);',
+			'  vWorldPosition = worldPosition.xyz;',
+			'  gl_Position = projectionMatrix * viewMatrix * worldPosition;',
+			'}',
+		].join('\n'),
+		fragmentShader: [
+			'uniform vec3 uColor;',
+			'uniform float uOpacity;',
+			'varying vec3 vNormal;',
+			'varying vec3 vWorldPosition;',
+			'void main() {',
+			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
+			'  float rim = pow(1.0 - max(dot(normalize(vNormal), viewDirection), 0.0), 2.5);',
+			'  gl_FragColor = vec4(uColor, rim * uOpacity);',
+			'}',
+		].join('\n'),
+		transparent: true,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+		side: THREE.BackSide,
+	}));
+}
+
+function addPlanet(graph, parent, options = {}) {
+	const radius = options.radius || 0.5;
+	const planet = new THREE.Group();
+	planet.position.copy(options.position || new THREE.Vector3());
+	planet.userData.phase = (planet.position.x + planet.position.y * 0.7) * 0.8;
+	planet.userData.label = options.label || 'planet';
+	const detail = isSmallViewport() ? 28 : 52;
+	const geometry = new THREE.SphereGeometry(radius, detail, Math.max(18, Math.round(detail * 0.65)));
+	const body = new THREE.Mesh(geometry, planetMaterial(graph, options));
+	const clouds = new THREE.Mesh(
+		new THREE.SphereGeometry(radius * 1.018, detail, Math.max(18, Math.round(detail * 0.65))),
+		cloudMaterial(graph, options.cloudColor || COLORS.white),
+	);
+	const atmosphere = new THREE.Mesh(
+		new THREE.SphereGeometry(radius * 1.13, detail, Math.max(18, Math.round(detail * 0.65))),
+		atmosphereMaterial(graph, options.atmosphereColor || options.oceanLight || COLORS.cyan, options.atmosphereOpacity || 0.5),
+	);
+	planet.add(atmosphere, body, clouds);
+	if (options.emblem) {
+		const emblem = new THREE.Sprite(new THREE.SpriteMaterial({
+			map: getEmblemTexture(options.emblem, options.emblemColor || COLORS.white),
+			transparent: true,
+			opacity: 0.72,
+			depthWrite: false,
+			depthTest: false,
+			blending: THREE.AdditiveBlending,
+		}));
+		emblem.scale.setScalar(radius * 0.62);
+		emblem.position.z = radius * 1.015;
+		planet.add(emblem);
+		planet.userData.emblem = emblem;
+	}
+	planet.userData.body = body;
+	planet.userData.clouds = clouds;
+	planet.userData.atmosphere = atmosphere;
+	parent.add(planet);
+	return planet;
 }
 
 function particleMaterial(graph, opacity = 0.7) {
@@ -460,6 +697,22 @@ function addArchiveSlab(graph, parent, size, position, color, rotation = [0, 0, 
 	return slab;
 }
 
+function addLineBox(parent, size, position, color, rotation = [0, 0, 0], opacity = 0.24) {
+	const geometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(size[0], size[1], size[2]));
+	const material = new THREE.LineBasicMaterial({
+		color,
+		transparent: true,
+		opacity,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+	});
+	const box = new THREE.LineSegments(geometry, material);
+	box.position.set(...position);
+	box.rotation.set(...rotation);
+	parent.add(box);
+	return box;
+}
+
 function buildHub(graph, small) {
 	const root = new THREE.Group();
 	root.scale.setScalar(small ? 0.9 : 1.18);
@@ -469,31 +722,18 @@ function buildHub(graph, small) {
 
 	const globe = new THREE.Group();
 	root.add(globe);
-	const atmosphere = new THREE.Mesh(
-		new THREE.SphereGeometry(0.76, 40, 28),
-		surfaceMaterial(graph, COLORS.cyan, 0.12, 0),
-	);
-	const sphere = new THREE.Mesh(
-		new THREE.SphereGeometry(0.61, 48, 32),
-		surfaceMaterial(graph, COLORS.green, 0.5, 1, THREE.NormalBlending),
-	);
-	const core = new THREE.Mesh(
-		new THREE.SphereGeometry(0.17, 24, 18),
-		surfaceMaterial(graph, COLORS.green, 0.95, 2),
-	);
-	globe.add(atmosphere, sphere);
-	addSphericalParticles(graph, globe, 0.64, small ? 70 : 170, 517, 0.76);
-	globe.add(core);
-	const globeGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-		map: getGlowTexture(),
-		color: COLORS.green,
-		transparent: true,
-		opacity: 0.15,
-		depthWrite: false,
-		blending: THREE.AdditiveBlending,
-	}));
-	globeGlow.scale.setScalar(0.95);
-	globe.add(globeGlow);
+	addPlanet(graph, globe, {
+		radius: 0.62,
+		ocean: 0x08475a,
+		oceanLight: 0x11d8c2,
+		land: 0x20f6a7,
+		landShadow: 0x087454,
+		atmosphereColor: 0x20f6a7,
+		atmosphereOpacity: 0.42,
+		emblem: 'W',
+		emblemColor: 0x83ffe0,
+		label: 'hub planet',
+	});
 
 	const orbitSpecs = [
 		{ radius: 1.03, yScale: 0.35, depth: 0.18, tilt: 0.28, yaw: -0.18, color: COLORS.green, opacity: 0.72 },
@@ -552,8 +792,28 @@ function buildCareer(graph, small) {
 		new THREE.Vector3(0.96, 0.04, 0.04),
 		new THREE.Vector3(1.4, -0.28, -0.42),
 	], COLORS.violet, 0.012, 0.48);
-	const huawei = addGlowNode(graph, root, new THREE.Vector3(-2.15, -0.98, 0.38), COLORS.green, 0.29, 1.55, 'Huawei');
-	const okx = addGlowNode(graph, root, new THREE.Vector3(0.56, 0.38, 0.7), COLORS.cyan, 0.24, 1.25, 'OKX');
+	const huawei = addPlanet(graph, root, {
+		position: new THREE.Vector3(-2.15, -0.98, 0.38),
+		radius: 0.29,
+		ocean: 0x08475a,
+		oceanLight: 0x11d8c2,
+		land: COLORS.green,
+		landShadow: 0x087454,
+		atmosphereColor: COLORS.green,
+		atmosphereOpacity: 0.35,
+		label: 'Huawei planet',
+	});
+	const okx = addPlanet(graph, root, {
+		position: new THREE.Vector3(0.56, 0.38, 0.7),
+		radius: 0.24,
+		ocean: 0x08485c,
+		oceanLight: COLORS.cyan,
+		land: 0x2be6d0,
+		landShadow: 0x0b5d72,
+		atmosphereColor: COLORS.cyan,
+		atmosphereOpacity: 0.34,
+		label: 'OKX planet',
+	});
 	const nodes = [
 		[new THREE.Vector3(-0.42, -0.18, 0.5), COLORS.cyan, 0.13],
 		[new THREE.Vector3(0.25, 0.86, -0.05), COLORS.violet, 0.145],
@@ -570,6 +830,10 @@ function buildCareer(graph, small) {
 	addFlow(graph, root, branch.curve, COLORS.cyan, 0.011, 0.043, 0.64);
 	addFlow(graph, root, learning.curve, COLORS.violet, 0.01, 0.038, 0.32);
 	graph.userData.update = (elapsed, pointer) => {
+		huawei.rotation.y = elapsed * 0.085;
+		huawei.userData.clouds.rotation.y = -elapsed * 0.12;
+		okx.rotation.y = -elapsed * 0.07;
+		okx.userData.clouds.rotation.y = elapsed * 0.1;
 		root.rotation.y = pointer.x * 0.06 + Math.sin(elapsed * 0.04) * 0.018;
 		root.rotation.x = pointer.y * 0.035;
 		root.position.y = -0.02 + Math.sin(elapsed * 0.04) * 0.02;
@@ -674,26 +938,28 @@ function buildVault(graph, small) {
 	addArchiveSlab(graph, root, [0.62, 1.2, 0.025], [-0.02, 0.12, -0.46], COLORS.cyan, [0.08, 0.18, 0.04]);
 	addArchiveSlab(graph, root, [0.76, 0.025, 1.12], [0.06, 0.02, 0.2], COLORS.violet, [0.14, -0.24, -0.08]);
 	addArchiveSlab(graph, root, [0.025, 1.0, 0.66], [0.48, 0.08, 0.04], COLORS.green, [-0.12, 0.2, 0.18]);
-	const outerShell = new THREE.Mesh(
-		new THREE.SphereGeometry(0.56, 36, 24),
-		surfaceMaterial(graph, COLORS.green, 0.34, 1),
-	);
-	const diamond = new THREE.Mesh(
-		new THREE.OctahedronGeometry(0.28, 2),
-		surfaceMaterial(graph, COLORS.cyan, 0.72, 2),
-	);
+	const vaultBox = addLineBox(root, [1.28, 1.34, 1.02], [0, 0.18, 0.2], COLORS.cyan, [0.08, 0.18, 0.04], 0.3);
+	const sealPlanet = addPlanet(graph, seal, {
+		radius: 0.45,
+		ocean: 0x08475a,
+		oceanLight: 0x11d8c2,
+		land: COLORS.green,
+		landShadow: 0x087454,
+		atmosphereColor: COLORS.cyan,
+		atmosphereOpacity: 0.3,
+		label: 'credential planet',
+	});
 	const sealGlow = new THREE.Sprite(new THREE.SpriteMaterial({
 		map: getGlowTexture(),
 		color: COLORS.green,
 		transparent: true,
-		opacity: 0.14,
+		opacity: 0.08,
 		depthWrite: false,
 		blending: THREE.AdditiveBlending,
 	}));
-	sealGlow.scale.setScalar(0.98);
-	seal.add(outerShell, sealGlow, diamond);
+	sealGlow.scale.setScalar(0.82);
+	seal.add(sealGlow);
 	seal.scale.setScalar(1.14);
-	addSphericalParticles(graph, seal, 0.58, small ? 46 : 110, 811, 0.62);
 	const rings = [
 		addArchiveRing(graph, root, 0.88, COLORS.cyan, [0, -0.28, -0.28], [0.48, 0.18, 0.12], 0.52),
 		addArchiveRing(graph, root, 0.7, COLORS.violet, [0.02, 0.05, 0.04], [1.08, -0.28, -0.35], 0.42),
@@ -721,7 +987,10 @@ function buildVault(graph, small) {
 	graph.userData.update = (elapsed, pointer) => {
 		seal.rotation.y = elapsed * 0.045;
 		seal.rotation.x = pointer.y * 0.025;
+		sealPlanet.rotation.y = elapsed * 0.075;
+		sealPlanet.userData.clouds.rotation.y = -elapsed * 0.1;
 		root.rotation.y = pointer.x * 0.04;
+		vaultBox.rotation.y = elapsed * 0.012;
 		rings[0].rotation.z = elapsed * 0.012;
 		rings[1].rotation.x = 1.08 + Math.sin(elapsed * 0.025) * 0.03;
 		rings[2].rotation.y = 0.72 - elapsed * 0.016;
@@ -756,13 +1025,29 @@ function buildLab(graph, small) {
 	platformRing.position.y = -1.21;
 	root.add(platformRing);
 
-	const core = new THREE.Mesh(
-		new THREE.IcosahedronGeometry(0.58, 3),
-		surfaceMaterial(graph, COLORS.cyan, 0.68, 2),
+	const core = new THREE.LineSegments(
+		new THREE.EdgesGeometry(new THREE.BoxGeometry(0.94, 0.94, 0.94)),
+		new THREE.LineBasicMaterial({
+			color: COLORS.cyan,
+			transparent: true,
+			opacity: 0.62,
+			depthWrite: false,
+			blending: THREE.AdditiveBlending,
+		}),
 	);
 	core.position.set(0, 0.28, 0.2);
 	root.add(core);
-	addSphericalParticles(graph, root, 0.58, small ? 70 : 155, 1301, 0.62);
+	const corePlanet = addPlanet(graph, root, {
+		position: new THREE.Vector3(0, 0.28, 0.2),
+		radius: 0.17,
+		ocean: 0x063b60,
+		oceanLight: COLORS.cyan,
+		land: 0x4be4ff,
+		landShadow: 0x144273,
+		atmosphereColor: COLORS.cyan,
+		atmosphereOpacity: 0.28,
+		label: 'lab payload planet',
+	});
 	const coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({
 		map: getGlowTexture(),
 		color: COLORS.cyan,
@@ -771,7 +1056,7 @@ function buildLab(graph, small) {
 		depthWrite: false,
 		blending: THREE.AdditiveBlending,
 	}));
-	coreGlow.scale.setScalar(1.2);
+	coreGlow.scale.setScalar(0.86);
 	coreGlow.position.copy(core.position);
 	root.add(coreGlow);
 	const coreOrbit = addArchiveRing(graph, root, 0.72, COLORS.cyan, [0, 0.28, 0.2], [0.72, 0.18, 0.14], 0.34);
@@ -806,6 +1091,8 @@ function buildLab(graph, small) {
 		root.rotation.x = pointer.y * 0.025;
 		core.rotation.y = elapsed * 0.08;
 		core.rotation.x = elapsed * 0.045;
+		corePlanet.rotation.y = -elapsed * 0.1;
+		corePlanet.userData.clouds.rotation.y = elapsed * 0.13;
 		rings[0].rotation.z = elapsed * 0.009;
 		rings[1].rotation.z = 0.14 - elapsed * 0.012;
 		rings[2].rotation.z = -0.18 + elapsed * 0.016;
