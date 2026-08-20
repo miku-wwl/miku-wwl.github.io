@@ -12,6 +12,24 @@ const COLORS = {
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const isSmallViewport = () => window.matchMedia('(max-width: 720px)').matches;
+let glowTexture;
+
+function getGlowTexture() {
+	if (glowTexture) return glowTexture;
+	const canvas = document.createElement('canvas');
+	canvas.width = 128;
+	canvas.height = 128;
+	const context = canvas.getContext('2d');
+	const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+	gradient.addColorStop(0, 'rgba(255,255,255,1)');
+	gradient.addColorStop(0.16, 'rgba(255,255,255,0.92)');
+	gradient.addColorStop(0.42, 'rgba(255,255,255,0.26)');
+	gradient.addColorStop(1, 'rgba(255,255,255,0)');
+	context.fillStyle = gradient;
+	context.fillRect(0, 0, 128, 128);
+	glowTexture = new THREE.CanvasTexture(canvas);
+	return glowTexture;
+}
 
 function setLiveTimes() {
 	const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -41,9 +59,47 @@ function lineMaterial(color, opacity = 1, additive = true) {
 	return new THREE.LineBasicMaterial({
 		color,
 		transparent: true,
-		opacity,
+		opacity: additive ? opacity * 0.62 : opacity,
 		depthWrite: false,
 		blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+	});
+}
+
+function softSurfaceMaterial(color, opacity = 1, blending = THREE.AdditiveBlending) {
+	return new THREE.ShaderMaterial({
+		uniforms: {
+			uColor: { value: new THREE.Color(color) },
+			uOpacity: { value: opacity },
+		},
+		vertexShader: `
+			varying vec3 vNormal;
+			varying vec3 vWorldPosition;
+			void main() {
+				vNormal = normalize(normalMatrix * normal);
+				vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+				vWorldPosition = worldPosition.xyz;
+				gl_Position = projectionMatrix * viewMatrix * worldPosition;
+			}
+		`,
+		fragmentShader: `
+			uniform vec3 uColor;
+			uniform float uOpacity;
+			varying vec3 vNormal;
+			varying vec3 vWorldPosition;
+			void main() {
+				vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+				float facing = max(dot(normalize(vNormal), viewDirection), 0.0);
+				float rim = pow(1.0 - facing, 2.35);
+				float core = pow(facing, 2.6);
+				vec3 color = uColor * (0.22 + rim * 0.92 + core * 0.18);
+				float alpha = uOpacity * (0.12 + rim * 0.74 + core * 0.08);
+				gl_FragColor = vec4(color, alpha);
+			}
+		`,
+		transparent: true,
+		depthWrite: false,
+		blending,
+		side: THREE.DoubleSide,
 	});
 }
 
@@ -64,28 +120,52 @@ function addPointCloud(parent, count, spread, depth, size, opacity, seed, colorB
 	const random = seededRandom(seed);
 	const positions = new Float32Array(count * 3);
 	const colors = new Float32Array(count * 3);
+	const sizes = new Float32Array(count);
 	const palette = [new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.green), new THREE.Color(COLORS.violet)];
 	for (let i = 0; i < count; i += 1) {
+		const angle = random() * Math.PI * 2;
+		const radius = Math.pow(random(), 1.65) * spread * 0.52;
 		const depthBias = (random() - 0.5) * depth;
-		positions[i * 3] = (random() - 0.5) * spread;
-		positions[i * 3 + 1] = (random() - 0.5) * spread * 0.52;
+		positions[i * 3] = Math.cos(angle) * radius;
+		positions[i * 3 + 1] = Math.sin(angle) * radius * 0.56;
 		positions[i * 3 + 2] = depthBias - 1.6;
 		const color = palette[(i + colorBias) % palette.length];
 		colors[i * 3] = color.r;
 		colors[i * 3 + 1] = color.g;
 		colors[i * 3 + 2] = color.b;
+		sizes[i] = 0.42 + Math.pow(random(), 4.5) * 2.8;
 	}
 	const geometry = new THREE.BufferGeometry();
 	geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 	geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-	const material = new THREE.PointsMaterial({
-		size,
-		vertexColors: true,
+	geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+	const material = new THREE.ShaderMaterial({
+		uniforms: { uSize: { value: size * 86 }, uOpacity: { value: opacity } },
+		vertexShader: `
+			uniform float uSize;
+			attribute float aSize;
+			attribute vec3 color;
+			varying vec3 vColor;
+			void main() {
+				vColor = color;
+				vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+				gl_Position = projectionMatrix * viewPosition;
+				gl_PointSize = min(18.0, max(1.15, uSize * aSize / max(1.0, -viewPosition.z)));
+			}
+		`,
+		fragmentShader: `
+			uniform float uOpacity;
+			varying vec3 vColor;
+			void main() {
+				float distanceFromCenter = distance(gl_PointCoord, vec2(0.5));
+				if (distanceFromCenter > 0.5) discard;
+				float softness = pow(1.0 - distanceFromCenter * 2.0, 1.7);
+				gl_FragColor = vec4(vColor * (0.55 + softness), softness * uOpacity);
+			}
+		`,
 		transparent: true,
-		opacity,
 		depthWrite: false,
 		blending: THREE.AdditiveBlending,
-		sizeAttenuation: true,
 	});
 	const points = new THREE.Points(geometry, material);
 	parent.add(points);
@@ -96,18 +176,17 @@ function addBackdrop(scene, small) {
 	const backdrop = new THREE.Group();
 	backdrop.position.z = -0.35;
 	scene.add(backdrop);
-	addPointCloud(backdrop, small ? 54 : 118, 12, 8, small ? 0.018 : 0.024, 0.33, 19);
-	addPointCloud(backdrop, small ? 14 : 23, 7, 4, small ? 0.035 : 0.045, 0.52, 71, 1);
-	addPointCloud(backdrop, small ? 4 : 9, 5, 2, small ? 0.07 : 0.085, 0.78, 113, 2);
+	addPointCloud(backdrop, small ? 78 : 180, 12, 8, small ? 0.018 : 0.024, 0.38, 19);
+	addPointCloud(backdrop, small ? 18 : 34, 7, 4, small ? 0.035 : 0.045, 0.58, 71, 1);
+	addPointCloud(backdrop, small ? 6 : 14, 5, 2, small ? 0.07 : 0.085, 0.82, 113, 2);
 
-	const grid = new THREE.GridHelper(12, 18, COLORS.cyan, COLORS.cyan);
-	grid.position.set(0, -2.12, -1.35);
-	grid.material.transparent = true;
-	grid.material.opacity = small ? 0.022 : 0.045;
-	grid.material.depthWrite = false;
-	grid.material.blending = THREE.AdditiveBlending;
-	backdrop.add(grid);
-	addLine(backdrop, [new THREE.Vector3(-6, -1.98, -1.32), new THREE.Vector3(6, -1.98, -1.32)], COLORS.cyan, 0.1);
+	const horizon = new THREE.Mesh(
+		new THREE.PlaneGeometry(12, 3.2),
+		basicMaterial(COLORS.deep, small ? 0.12 : 0.18, { side: THREE.DoubleSide })
+	);
+	horizon.position.set(0, -2.18, -1.42);
+	horizon.rotation.x = -Math.PI / 2;
+	backdrop.add(horizon);
 	return backdrop;
 }
 
@@ -119,17 +198,22 @@ function addGlowNode(parent, position, color, size = 0.11, emphasis = 1, label =
 	node.userData.emphasis = emphasis;
 	node.userData.label = label;
 
-	const halo = new THREE.Mesh(
-		new THREE.SphereGeometry(size * (2.7 + emphasis * 0.65), 12, 8),
-		basicMaterial(color, 0.055 + emphasis * 0.018, { additive: true })
-	);
+	const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+		map: getGlowTexture(),
+		color,
+		transparent: true,
+		opacity: 0.13 + emphasis * 0.045,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+	}));
+	halo.scale.setScalar(size * (3.0 + emphasis * 0.4));
 	const shell = new THREE.Mesh(
-		new THREE.SphereGeometry(size * 1.55, 12, 8),
-		basicMaterial(color, 0.2 + emphasis * 0.045, { additive: true })
+		new THREE.SphereGeometry(size * 1.12, 24, 16),
+		softSurfaceMaterial(color, 0.44 + emphasis * 0.07)
 	);
 	const core = new THREE.Mesh(
-		new THREE.SphereGeometry(size * (0.62 + emphasis * 0.13), 12, 8),
-		basicMaterial(color, 0.92, { additive: true })
+		new THREE.SphereGeometry(size * (0.48 + emphasis * 0.1), 20, 14),
+		softSurfaceMaterial(color, 0.92)
 	);
 	node.add(halo, shell, core);
 	parent.add(node);
@@ -181,21 +265,24 @@ function addBoxBoundary(parent, size, position, color, opacity = 0.06, rotation 
 	group.position.set(...position);
 	group.rotation.set(...rotation);
 	const volume = new THREE.Mesh(
-		new THREE.BoxGeometry(...size),
-		basicMaterial(color, opacity, { additive: true, side: THREE.DoubleSide })
+		new THREE.PlaneGeometry(size[0], size[1]),
+		basicMaterial(color, opacity * 0.7, { additive: true, side: THREE.DoubleSide })
 	);
-	const edges = new THREE.LineSegments(
-		new THREE.EdgesGeometry(new THREE.BoxGeometry(...size)),
-		lineMaterial(color, Math.min(opacity * 5.2, 0.42), true)
+	volume.position.z = size[2] * 0.5;
+	const floor = new THREE.Mesh(
+		new THREE.PlaneGeometry(size[0] * 0.92, size[2] * 0.92),
+		basicMaterial(color, opacity * 0.42, { additive: true, side: THREE.DoubleSide })
 	);
-	group.add(volume, edges);
+	floor.rotation.x = -Math.PI / 2;
+	floor.position.y = -size[1] * 0.5;
+	group.add(volume, floor);
 	parent.add(group);
 	return group;
 }
 
 function addVerificationRing(parent, radius, color, position, rotation, opacity = 0.46) {
 	const ring = new THREE.Mesh(
-		new THREE.TorusGeometry(radius, 0.012, 8, 72),
+		new THREE.TorusGeometry(radius, 0.018, 10, 96),
 		basicMaterial(color, opacity, { additive: true })
 	);
 	ring.position.set(...position);
@@ -222,22 +309,23 @@ function buildHub(graph, small) {
 
 	const core = new THREE.Group();
 	const shell = new THREE.Mesh(
-		new THREE.IcosahedronGeometry(0.82, 1),
-		basicMaterial(COLORS.deep, 0.72, { additive: false, side: THREE.DoubleSide })
-	);
-	const shellEdges = new THREE.LineSegments(
-		new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.82, 1)),
-		lineMaterial(COLORS.cyan, 0.2, true)
+		new THREE.SphereGeometry(0.62, 32, 20),
+		softSurfaceMaterial(COLORS.cyan, 0.34, THREE.NormalBlending)
 	);
 	const inner = new THREE.Mesh(
-		new THREE.OctahedronGeometry(0.23, 1),
-		basicMaterial(COLORS.green, 0.86, { additive: true })
+		new THREE.SphereGeometry(0.19, 24, 16),
+		softSurfaceMaterial(COLORS.green, 0.95)
 	);
-	const innerHalo = new THREE.Mesh(
-		new THREE.SphereGeometry(0.43, 16, 10),
-		basicMaterial(COLORS.green, 0.045, { additive: true })
-	);
-	core.add(shell, shellEdges, innerHalo, inner);
+	const innerHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+		map: getGlowTexture(),
+		color: COLORS.green,
+		transparent: true,
+		opacity: 0.12,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+	}));
+	innerHalo.scale.setScalar(0.82);
+	core.add(shell, innerHalo, inner);
 	plane.add(core);
 	trackBreathing(graph, inner, 0.055);
 
@@ -483,12 +571,6 @@ function buildLab(graph, small) {
 	);
 	platform.position.set(0, -1.52, -0.05);
 	launchpad.add(platform);
-	const platformEdges = new THREE.LineSegments(
-		new THREE.EdgesGeometry(new THREE.CylinderGeometry(1.68, 1.82, 0.08, 32, 1, true)),
-		lineMaterial(COLORS.cyan, 0.42, true)
-	);
-	platformEdges.position.copy(platform.position);
-	launchpad.add(platformEdges);
 	const rings = [
 		addVerificationRing(launchpad, 1.34, COLORS.cyan, [0, -1.48, 0], [Math.PI / 2, 0, 0], 0.7),
 		addVerificationRing(launchpad, 1.03, COLORS.green, [0, -1.4, 0.04], [Math.PI / 2, 0.14, 0], 0.55),
@@ -594,6 +676,10 @@ function mountScene(canvas, kind) {
 	});
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 	renderer.setClearColor(0x000000, 0);
+	if ('toneMapping' in renderer && THREE.ACESFilmicToneMapping !== undefined) {
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		renderer.toneMappingExposure = 1.08;
+	}
 	if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 	const graph = createSceneGraph(kind, scene, small);
