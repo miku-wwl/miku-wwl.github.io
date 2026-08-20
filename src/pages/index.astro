@@ -3,24 +3,13 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
-import MvpBadge from '../components/MvpBadge.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import { SITE_TITLE, SITE_DESCRIPTION, SITE_TAGLINE } from '../consts';
-import { getCollection } from 'astro:content';
+import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE } from '../consts';
 
-const posts = (await getCollection('blog'))
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-	.slice(0, 4);
-
-const terraformTrackUrl = 'https://github.com/miku-wwl/Terraform-Authoring-and-Operations-Professional-Track';
-
-const skills = [
-	{ group: 'Backend', items: ['Java', 'Spring Boot', 'Spring Cloud', 'Node.js', '.NET 10', 'REST APIs'] },
-	{ group: 'Distributed Systems', items: ['Microservices', 'Thrift IDL', 'Message queues', 'Aeron Archive', 'Tracing'] },
-	{ group: 'Platform', items: ['Terraform', 'Docker', 'Kubernetes', 'Kustomize', 'GitHub Actions', 'CI/CD'] },
-	{ group: 'Cloud', items: ['AWS', 'Azure', 'AKS', 'Azure Monitor', 'CloudWatch', 'Cost Management'] },
-	{ group: 'Data', items: ['PostgreSQL', 'MySQL', 'Redis', 'SQL', 'Azure Resource Graph'] },
-	{ group: 'Frontend', items: ['TypeScript', 'React'] },
+const modules = [
+	{ id: '01', title: 'Career Journey', slug: 'career-journey', href: 'https://miku-wwl.github.io/career-journey/', command: './open career-journey', copy: 'Trace the roles, systems, and learning checkpoints behind the engineering path.', meta: 'experience · education · trajectory', tone: 'green' },
+	{ id: '02', title: 'Engineering Projects', slug: 'engineering-projects', href: 'https://miku-wwl.github.io/engineering-projects/', command: './open engineering-projects', copy: 'Explore active and planned work across backend platforms, cloud governance, and SRE.', meta: 'systems · platform · reliability', tone: 'blue' },
+	{ id: '03', title: 'Certification Vault', slug: 'certification-vault', href: 'https://miku-wwl.github.io/certification-vault/', command: './open certification-vault', copy: 'Open the verified credential archive for cloud, Kubernetes, and platform engineering.', meta: 'azure · aws · kubernetes', tone: 'violet' },
+	{ id: '04', title: 'Engineering Lab', slug: 'engineering-lab', href: 'https://miku-wwl.github.io/engineering-lab/', command: './open engineering-lab', copy: 'Enter the future playground for interactive demos, games, experiments, and prototypes.', meta: 'experiments · demos · play', tone: 'amber' },
 ];
 ---
 
@@ -32,74 +21,45 @@ const skills = [
 	<body>
 		<Header />
 		<main>
-			<section class="hero">
-				<TerminalWindow title="weilai@auckland:~">
-					<p class="hero-line"><span class="prompt">whoami</span></p>
-					<h1 class="hero-name">Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
+			<section class="portal-hero">
+				<TerminalWindow title="weilai@auckland:~/portal" class="intro-window">
+					<p class="hero-command"><span class="prompt">whoami</span></p>
+					<h1>Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
 					<p class="hero-tagline mono">{SITE_TAGLINE}</p>
-					<p class="hero-bio">
-						I am an Auckland-based software engineer with 4+ years of professional experience at Huawei,
-						focused on backend systems, distributed services, Kubernetes-based applications, and cloud-native
-						engineering.
-					</p>
-					<ul class="hero-points">
-						<li>Java/Spring Boot microservices, Kubernetes deployments, service contracts, and production troubleshooting.</li>
-						<li>AWS, Azure, Terraform, CI/CD, observability, root-cause analysis, and platform reliability.</li>
-						<li>Interested in backend, cloud-native, SRE, and platform engineering roles where reliability matters.</li>
-					</ul>
-
-					<div class="learning-track">
-						<p class="learning-command mono">~/learning $ terraform professional-track --active</p>
-						<p>
-							Currently working intensively through the Terraform Authoring and Operations Professional Track,
-							building hands-on IaC labs around modules, validation, testing, backends, policy, security, and operational workflows.
-						</p>
-						<a class="repo-link mono" href={terraformTrackUrl} target="_blank" rel="noreferrer">
-							github.com/miku-wwl/Terraform-Authoring-and-Operations-Professional-Track
-						</a>
-					</div>
-
-					<div class="hero-mvp">
-						<MvpBadge variant="block" />
-					</div>
-
-					<div class="hero-actions">
-						<a class="btn primary" href="/projects">projects →</a>
-						<a class="btn" href="/experience">experience</a>
-						<a class="btn" href={terraformTrackUrl} target="_blank" rel="noreferrer">terraform track ↗</a>
-					</div>
+					<p class="hero-bio">Auckland-based software engineer building backend systems, cloud-native platforms, and reliable paths through complex technical problems.</p>
+					<div class="hero-footer-line"><span class="status-dot" aria-hidden="true"></span><span class="mono">portal online · choose a destination to continue</span></div>
 				</TerminalWindow>
+
+				<aside class="map-panel" aria-label="Portal status">
+					<div class="map-grid" aria-hidden="true"></div>
+					<p class="eyebrow">~/miku-wwl $ ./status --hub</p>
+					<div class="map-orbit"><span class="orbit-ring ring-one"></span><span class="orbit-ring ring-two"></span><span class="orbit-core">WW</span></div>
+					<div class="map-readout"><div><span>nodes</span><strong>04</strong></div><div><span>mode</span><strong>explore</strong></div><div><span>theme</span><strong>adaptive</strong></div></div>
+				</aside>
 			</section>
 
-			<section class="section">
-				<p class="eyebrow">~/ $ cat stack.txt</p>
-				<div class="grid stack-grid">
-					{skills.map((s) => (
-						<TerminalWindow title={s.group}>
-							<ul class="tag-list">
-								{s.items.map((i) => <li class="tag">{i}</li>)}
-							</ul>
-						</TerminalWindow>
+			<section class="launcher-section" aria-labelledby="launcher-title">
+				<div class="launcher-heading"><div><p class="eyebrow">~/miku-wwl $ select --module</p><h2 id="launcher-title">Choose your next area</h2></div><p class="launcher-hint mono">4 destinations · independent pages</p></div>
+				<nav class="module-grid" aria-label="Portfolio destinations">
+					{modules.map((module) => (
+						<a class:list={['module-card', module.tone]} href={module.href}>
+							<span class="module-glow" aria-hidden="true"></span>
+							<span class="module-topline"><span class="module-id">NODE_{module.id}</span><span class="module-status"><span class="status-dot" aria-hidden="true"></span>READY</span></span>
+							<span class="module-icon" aria-hidden="true">{module.tone === 'green' && '⌁'}{module.tone === 'blue' && '◈'}{module.tone === 'violet' && '◇'}{module.tone === 'amber' && '✦'}</span>
+							<span class="module-title-row"><h3>{module.title}</h3><span class="module-arrow" aria-hidden="true">↗</span></span>
+							<span class="module-command mono">{module.command}</span>
+							<span class="module-copy">{module.copy}</span>
+							<span class="module-meta mono">{module.meta}</span>
+						</a>
 					))}
-				</div>
+				</nav>
 			</section>
 
-			<section class="section">
-				<div class="section-head">
-					<p class="eyebrow">~/blog $ ls -t | head -4</p>
-					<a class="link-more" href="/blog">view all →</a>
+			<section class="legacy-section" aria-labelledby="legacy-title">
+				<div class="legacy-window">
+					<div class="legacy-bar"><span class="terminal-dots" aria-hidden="true"><span class="terminal-dot red"></span><span class="terminal-dot yellow"></span><span class="terminal-dot green"></span></span><span>legacy-routes.txt</span></div>
+					<div class="legacy-body"><div><p class="eyebrow">~/miku-wwl $ cat legacy-routes.txt</p><h2 id="legacy-title">The original Astro routes remain online</h2></div><nav class="legacy-links" aria-label="Original portfolio routes"><a href="/about">about <span>→</span></a><a href="/blog">blog <span>→</span></a><a href="/experience">experience <span>→</span></a><a href="/projects">projects <span>→</span></a><a href="/certifications">certifications <span>→</span></a></nav></div>
 				</div>
-				<ul class="post-list">
-					{posts.map((post) => (
-						<li>
-							<a class="post-row" href={`/blog/${post.id}/`}>
-								<span class="post-prompt" aria-hidden="true">❯</span>
-								<span class="post-title">{post.data.title}</span>
-								<span class="post-date mono"><FormattedDate date={post.data.pubDate} /></span>
-							</a>
-						</li>
-					))}
-				</ul>
 			</section>
 		</main>
 		<Footer />
@@ -107,124 +67,63 @@ const skills = [
 </html>
 
 <style>
-	.hero { margin-top: 1.5rem; }
-	.hero-line { margin: 0 0 0.6rem; }
-	.hero-name {
-		margin: 0.2rem 0 0.4rem;
-		font-size: clamp(2rem, 3vw + 1rem, 3rem);
-	}
-	.hero-tagline {
-		max-width: 72ch;
-		color: var(--prompt);
-		margin: 0 0 1rem;
-		font-size: clamp(0.9rem, 0.7vw + 0.72rem, 1.05rem);
-		line-height: 1.55;
-	}
-	.hero-bio { max-width: 70ch; font-size: 1.04rem; }
-	.hero-points {
-		max-width: 72ch;
-		margin: 0.85rem 0 0;
-		padding: 0;
-		list-style: none;
-		display: grid;
-		gap: 0.45rem;
-	}
-	.hero-points li {
-		position: relative;
-		padding-left: 1.3rem;
-		color: var(--text-muted);
-	}
-	.hero-points li::before {
-		content: '✓';
-		position: absolute;
-		left: 0;
-		color: var(--prompt);
-		font-family: var(--font-mono);
-		font-weight: 700;
-	}
-	.learning-track {
-		max-width: 72ch;
-		margin: 1rem 0 0;
-		padding-left: 1rem;
-		border-left: 2px solid var(--prompt);
-		color: var(--text-muted);
-	}
-	.learning-track p { margin-bottom: 0.45rem; }
-	.learning-command {
-		color: var(--prompt);
-		font-size: 0.85rem;
-	}
-	.repo-link {
-		display: inline-block;
-		max-width: 100%;
-		overflow-wrap: anywhere;
-		font-size: 0.82rem;
-	}
-	.hero-mvp { margin: 1.25rem 0 1.5rem; }
-	.hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-
-	.grid { display: grid; gap: 1rem; }
-	.stack-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-	@media (max-width: 900px) { .stack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 560px) { .stack-grid { grid-template-columns: 1fr; } }
-
-	.tag-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-	.tag {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.2rem 0.55rem;
-		font-family: var(--font-mono);
-		font-size: 0.82rem;
-		color: var(--text);
-		background: var(--surface-2);
-		border: 1px solid var(--border);
-		border-radius: 999px;
-	}
-
-	.section-head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 0.75rem;
-	}
-	.link-more {
-		font-family: var(--font-mono);
-		font-size: 0.85rem;
-	}
-	.post-list { list-style: none; padding: 0; margin: 0; }
-	.post-row {
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-		align-items: baseline;
-		gap: 0.7rem;
-		padding: 0.7rem 0.85rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-		color: var(--text);
-		text-decoration: none;
-		margin-bottom: 0.5rem;
-		transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
-	}
-	.post-row:hover {
-		border-color: var(--accent);
-		background: var(--surface-2);
-		text-decoration: none;
-		transform: translateX(2px);
-	}
-	.post-prompt { color: var(--prompt); font-family: var(--font-mono); }
-	.post-title { color: var(--text); }
-	.post-date { color: var(--text-muted); font-size: 0.85rem; }
-	@media (max-width: 560px) {
-		.post-row { grid-template-columns: auto 1fr; }
-		.post-date { grid-column: 1 / -1; padding-left: 1.6rem; }
-	}
+	.portal-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr); gap: 1rem; align-items: stretch; margin-top: 1.5rem; }
+	.intro-window { min-height: 100%; }
+	.hero-command { margin: 0 0 0.5rem; }
+	.intro-window h1 { margin: 0.2rem 0 0.45rem; font-size: clamp(2.2rem, 4vw + 1rem, 4rem); }
+	.hero-tagline { max-width: 75ch; margin: 0 0 0.85rem; color: var(--prompt); font-size: clamp(0.85rem, 0.5vw + 0.75rem, 1rem); line-height: 1.55; }
+	.hero-bio { max-width: 70ch; margin: 0; color: var(--text-muted); font-size: 1rem; }
+	.hero-footer-line { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.5rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.77rem; }
+	.status-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--prompt); box-shadow: 0 0 0 3px var(--award-soft), 0 0 12px var(--prompt); }
+	.map-panel { position: relative; display: flex; flex-direction: column; min-height: 300px; overflow: hidden; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-1); }
+	.map-grid { position: absolute; inset: 0; opacity: 0.45; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(180deg, black, transparent 85%); }
+	.map-panel .eyebrow, .map-readout { position: relative; z-index: 1; }
+	.map-orbit { position: relative; display: grid; place-items: center; flex: 1; min-height: 175px; }
+	.orbit-ring { position: absolute; display: block; border: 1px solid var(--accent); border-radius: 50%; opacity: 0.5; }
+	.ring-one { width: 142px; height: 142px; transform: rotate(28deg) skewX(-18deg); border-color: var(--prompt); }
+	.ring-two { width: 205px; height: 82px; transform: rotate(-25deg); border-color: var(--magenta); }
+	.orbit-core { display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid var(--prompt); border-radius: 50%; color: var(--prompt); background: var(--bg); font: 700 1rem var(--font-mono); box-shadow: 0 0 28px var(--award-soft); }
+	.map-readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
+	.map-readout div { display: grid; gap: 0.15rem; }
+	.map-readout span { color: var(--text-faint); font: 0.65rem var(--font-mono); text-transform: uppercase; }
+	.map-readout strong { color: var(--text); font: 600 0.75rem var(--font-mono); }
+	.launcher-section { margin-top: 3.25rem; }
+	.launcher-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+	.launcher-heading h2 { margin-bottom: 0; }
+	.launcher-hint { margin: 0; color: var(--text-muted); font-size: 0.78rem; }
+	.module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+	.module-card { position: relative; display: flex; flex-direction: column; min-height: 290px; overflow: hidden; padding: 1.1rem 1.15rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); color: var(--text); text-decoration: none; box-shadow: var(--shadow-1); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+	.module-card:hover { color: var(--text); text-decoration: none; transform: translateY(-5px); border-color: var(--module-color); background: var(--surface-2); box-shadow: 0 0 0 1px var(--module-color), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
+	.module-card:focus-visible { box-shadow: var(--ring), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
+	.module-card.green { --module-color: var(--prompt); }
+	.module-card.blue { --module-color: var(--accent); }
+	.module-card.violet { --module-color: var(--magenta); }
+	.module-card.amber { --module-color: var(--yellow); }
+	.module-glow { position: absolute; width: 180px; height: 180px; top: -90px; right: -55px; border-radius: 50%; background: var(--module-color); opacity: 0.07; filter: blur(10px); transition: opacity 180ms ease, transform 180ms ease; }
+	.module-card:hover .module-glow { opacity: 0.18; transform: scale(1.3); }
+	.module-topline, .module-title-row { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+	.module-topline { margin-bottom: 1.6rem; color: var(--text-faint); font-size: 0.68rem; }
+	.module-id, .module-status { font-family: var(--font-mono); letter-spacing: 0.08em; }
+	.module-status { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--module-color); }
+	.module-status .status-dot { width: 5px; height: 5px; box-shadow: 0 0 8px var(--module-color); background: var(--module-color); }
+	.module-icon { position: relative; z-index: 1; display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 1rem; border: 1px solid color-mix(in srgb, var(--module-color) 50%, var(--border)); border-radius: var(--radius); color: var(--module-color); background: color-mix(in srgb, var(--module-color) 8%, var(--surface)); font: 1.8rem var(--font-mono); }
+	.module-title-row { align-items: baseline; }
+	.module-title-row h3 { margin: 0; font-size: clamp(1.15rem, 1vw + 0.9rem, 1.45rem); }
+	.module-arrow { color: var(--module-color); font: 700 1.35rem var(--font-mono); transition: transform 180ms ease; }
+	.module-card:hover .module-arrow { transform: translate(3px, -3px); }
+	.module-command { margin: 0.65rem 0 0.8rem; color: var(--module-color); font-size: 0.75rem; }
+	.module-copy { max-width: 46ch; color: var(--text-muted); font-size: 0.92rem; }
+	.module-meta { margin-top: auto; padding-top: 1.3rem; color: var(--text-faint); font-size: 0.7rem; }
+	.legacy-section { margin-top: 2.5rem; }
+	.legacy-window { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+	.legacy-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); font: 0.78rem var(--font-mono); }
+	.legacy-body { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: 1.1rem 1.25rem 1.2rem; }
+	.legacy-body h2 { margin: 0; font-size: 1.05rem; }
+	.legacy-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
+	.legacy-links a { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); font: 0.74rem var(--font-mono); text-decoration: none; transition: color 120ms ease, border-color 120ms ease, transform 120ms ease; }
+	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
+	.legacy-links span { color: var(--accent); }
+	@media (max-width: 820px) { .portal-hero { grid-template-columns: 1fr; } .map-panel { min-height: 240px; } }
+	@media (max-width: 620px) { .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 250px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.45rem; } .legacy-links { justify-content: flex-start; margin-top: 1rem; } }
+	@media (prefers-reduced-motion: reduce) { .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>
