@@ -6,24 +6,24 @@
 :root,
 :root[data-theme='dark'] {
 	color-scheme: dark;
-	--bg: #0d1117;
-	--bg-elev: #0f1622;
-	--surface: #161b22;
-	--surface-2: #1c2230;
-	--border: #30363d;
-	--border-strong: #3d444d;
-	--text: #e6edf3;
-	--text-muted: #8b949e;
-	--text-faint: #6e7681;
-	--prompt: #3fb950;
-	--accent: #58a6ff;
-	--accent-soft: rgba(88, 166, 255, 0.16);
-	--magenta: #d2a8ff;
-	--yellow: #f7c948;
-	--orange: #ff9b6e;
-	--award: #3fb950;
-	--award-soft: rgba(63, 185, 80, 0.16);
-	--selection: rgba(63, 185, 80, 0.32);
+	--bg: #030a12;
+	--bg-elev: #06121d;
+	--surface: rgba(7, 20, 32, 0.88);
+	--surface-2: rgba(10, 29, 44, 0.92);
+	--border: #1d3548;
+	--border-strong: #2d5a70;
+	--text: #e7f2f7;
+	--text-muted: #8ca1b0;
+	--text-faint: #577083;
+	--prompt: #28f0a0;
+	--accent: #27c9ff;
+	--accent-soft: rgba(39, 201, 255, 0.14);
+	--magenta: #b36dff;
+	--yellow: #f1b74c;
+	--orange: #ff8c72;
+	--award: #28f0a0;
+	--award-soft: rgba(40, 240, 160, 0.14);
+	--selection: rgba(40, 240, 160, 0.28);
 	--shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.55);
 	--shadow-2: 0 1px 0 rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.65);
 	--glow: 0 0 0 1px rgba(88, 166, 255, 0.25), 0 0 24px rgba(88, 166, 255, 0.18);
@@ -36,7 +36,7 @@
 	--font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 	--font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-	--max-page: 1080px;
+	--max-page: 1380px;
 	--max-content: 760px;
 
 	color: var(--text);
@@ -86,7 +86,8 @@ body {
 	padding: 0;
 	min-height: 100vh;
 	background:
-		radial-gradient(1200px 600px at 50% -200px, var(--accent-soft), transparent 60%),
+		radial-gradient(1000px 560px at 66% 4%, rgba(13, 90, 105, 0.16), transparent 68%),
+		radial-gradient(900px 450px at 8% 36%, rgba(11, 55, 90, 0.14), transparent 72%),
 		var(--bg);
 	color: var(--text);
 	font-family: var(--font-sans);
@@ -96,6 +97,19 @@ body {
 	text-rendering: optimizeLegibility;
 	word-wrap: break-word;
 	overflow-wrap: break-word;
+	overflow-x: hidden;
+}
+
+body::before {
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	content: '';
+	pointer-events: none;
+	opacity: 0.42;
+	background-image: linear-gradient(rgba(38, 127, 157, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(38, 127, 157, 0.045) 1px, transparent 1px);
+	background-size: 42px 42px;
+	mask-image: linear-gradient(to bottom, black, transparent 90%);
 }
 
 ::selection {
@@ -125,7 +139,7 @@ main {
 	width: 100%;
 	max-width: var(--max-page);
 	margin: 0 auto;
-	padding: 2.5rem 1.25rem 4rem;
+	padding: 2.25rem 1.25rem 4rem;
 }
 
 h1, h2, h3, h4, h5, h6 {

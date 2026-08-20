@@ -2,14 +2,54 @@
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import TerminalWindow from '../components/TerminalWindow.astro';
+import ThreeScene from '../components/ThreeScene.astro';
 import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE } from '../consts';
 
 const modules = [
-	{ id: '01', title: 'Career Journey', slug: 'career-journey', href: 'https://miku-wwl.github.io/career-journey/', command: './open career-journey', copy: 'Trace the roles, systems, and learning checkpoints behind the engineering path.', meta: 'experience · education · trajectory', tone: 'green' },
-	{ id: '02', title: 'Engineering Projects', slug: 'engineering-projects', href: 'https://miku-wwl.github.io/engineering-projects/', command: './open engineering-projects', copy: 'Explore active and planned work across backend platforms, cloud governance, and SRE.', meta: 'systems · platform · reliability', tone: 'blue' },
-	{ id: '03', title: 'Certification Vault', slug: 'certification-vault', href: 'https://miku-wwl.github.io/certification-vault/', command: './open certification-vault', copy: 'Open the verified credential archive for cloud, Kubernetes, and platform engineering.', meta: 'azure · aws · kubernetes', tone: 'violet' },
-	{ id: '04', title: 'Engineering Lab', slug: 'engineering-lab', href: 'https://miku-wwl.github.io/engineering-lab/', command: './open engineering-lab', copy: 'Enter the future playground for interactive demos, games, experiments, and prototypes.', meta: 'experiments · demos · play', tone: 'amber' },
+	{
+		id: '01',
+		title: 'Career Journey',
+		slug: 'career-journey',
+		href: 'https://miku-wwl.github.io/career-journey/',
+		command: './open career-journey',
+		copy: 'Trace roles, systems, and learning checkpoints across the engineering path.',
+		meta: 'experience · education · trajectory',
+		accent: 'green',
+		icon: '⌁',
+	},
+	{
+		id: '02',
+		title: 'Engineering Projects',
+		slug: 'engineering-projects',
+		href: 'https://miku-wwl.github.io/engineering-projects/',
+		command: './open engineering-projects',
+		copy: 'Explore active and planned work across backend platforms, cloud governance, and SRE.',
+		meta: 'systems · platform · reliability',
+		accent: 'cyan',
+		icon: '◈',
+	},
+	{
+		id: '03',
+		title: 'Certification Vault',
+		slug: 'certification-vault',
+		href: 'https://miku-wwl.github.io/certification-vault/',
+		command: './open certification-vault',
+		copy: 'Open the verified credential archive for cloud, Kubernetes, and platform engineering.',
+		meta: 'azure · aws · kubernetes',
+		accent: 'violet',
+		icon: '◇',
+	},
+	{
+		id: '04',
+		title: 'Engineering Lab',
+		slug: 'engineering-lab',
+		href: 'https://miku-wwl.github.io/engineering-lab/',
+		command: './open engineering-lab',
+		copy: 'Enter the playground for interactive demos, games, experiments, and prototypes.',
+		meta: 'experiments · demos · play',
+		accent: 'amber',
+		icon: '✦',
+	},
 ];
 ---
 
@@ -20,33 +60,47 @@ const modules = [
 	</head>
 	<body>
 		<Header />
-		<main>
-			<section class="portal-hero">
-				<TerminalWindow title="weilai@auckland:~/portal" class="intro-window">
-					<p class="hero-command"><span class="prompt">whoami</span></p>
-					<h1>Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
-					<p class="hero-tagline mono">{SITE_TAGLINE}</p>
-					<p class="hero-bio">Auckland-based software engineer building backend systems, cloud-native platforms, and reliable paths through complex technical problems.</p>
-					<div class="hero-footer-line"><span class="status-dot" aria-hidden="true"></span><span class="mono">portal online · choose a destination to continue</span></div>
-				</TerminalWindow>
+		<main class="hub-main">
+			<section class="hub-hero" aria-labelledby="hub-title">
+				<div class="hub-copy">
+					<p class="eyebrow">~/miku-wwl $ whoami</p>
+					<h1 id="hub-title">Weilai Wang<span class="caret" aria-hidden="true"></span></h1>
+					<p class="hub-tagline mono">{SITE_TAGLINE}</p>
+					<p class="hub-bio">Auckland-based software engineer building backend systems, cloud-native platforms, and reliable paths through complex technical problems.</p>
+					<div class="hub-signal"><span class="status-dot" aria-hidden="true"></span><span class="mono">portal online · choose a destination to continue</span></div>
+				</div>
 
-				<aside class="map-panel" aria-label="Portal status">
-					<div class="map-grid" aria-hidden="true"></div>
-					<p class="eyebrow">~/miku-wwl $ ./status --hub</p>
-					<div class="map-orbit"><span class="orbit-ring ring-one"></span><span class="orbit-ring ring-two"></span><span class="orbit-core">WW</span></div>
-					<div class="map-readout"><div><span>nodes</span><strong>04</strong></div><div><span>mode</span><strong>explore</strong></div><div><span>theme</span><strong>adaptive</strong></div></div>
+				<div class="hub-visual">
+					<ThreeScene variant="hub" />
+					<div class="scene-label scene-label-top">// STATUS :: HUB</div>
+					<div class="scene-label scene-label-bottom">ORBITAL INDEX / 04 NODES</div>
+				</div>
+
+				<aside class="hud-panel hub-hud" aria-label="Hub status">
+					<p class="hud-title">// SYSTEM HUD</p>
+					<div class="hud-row"><span>status</span><strong class="live"><span class="status-dot" aria-hidden="true"></span> ONLINE</strong></div>
+					<div class="hud-row"><span>nodes</span><strong>04</strong></div>
+					<div class="hud-row"><span>mode</span><strong class="cyan">explore</strong></div>
+					<div class="hud-row"><span>theme</span><strong>adaptive</strong></div>
+					<div class="hud-time mono"><span>local time</span><strong data-live-time>--:--:--</strong></div>
 				</aside>
 			</section>
 
 			<section class="launcher-section" aria-labelledby="launcher-title">
-				<div class="launcher-heading"><div><p class="eyebrow">~/miku-wwl $ select --module</p><h2 id="launcher-title">Choose your next area</h2></div><p class="launcher-hint mono">4 destinations · independent pages</p></div>
+				<div class="launcher-heading">
+					<div>
+						<p class="eyebrow">~/miku-wwl $ select --module</p>
+						<h2 id="launcher-title">Choose your next area</h2>
+					</div>
+					<p class="launcher-hint mono">4 destinations · independent pages</p>
+				</div>
 				<nav class="module-grid" aria-label="Portfolio destinations">
 					{modules.map((module) => (
-						<a class:list={['module-card', module.tone]} href={module.href}>
+						<a class:list={['module-card', module.accent]} href={module.href} data-module={module.slug}>
 							<span class="module-glow" aria-hidden="true"></span>
 							<span class="module-topline"><span class="module-id">NODE_{module.id}</span><span class="module-status"><span class="status-dot" aria-hidden="true"></span>READY</span></span>
-							<span class="module-icon" aria-hidden="true">{module.tone === 'green' && '⌁'}{module.tone === 'blue' && '◈'}{module.tone === 'violet' && '◇'}{module.tone === 'amber' && '✦'}</span>
-							<span class="module-title-row"><h3>{module.title}</h3><span class="module-arrow" aria-hidden="true">↗</span></span>
+							<span class="module-icon" aria-hidden="true">{module.icon}</span>
+							<span class="module-title-row"><span class="module-title">{module.title}</span><span class="module-arrow" aria-hidden="true">↗</span></span>
 							<span class="module-command mono">{module.command}</span>
 							<span class="module-copy">{module.copy}</span>
 							<span class="module-meta mono">{module.meta}</span>
@@ -58,72 +112,76 @@ const modules = [
 			<section class="legacy-section" aria-labelledby="legacy-title">
 				<div class="legacy-window">
 					<div class="legacy-bar"><span class="terminal-dots" aria-hidden="true"><span class="terminal-dot red"></span><span class="terminal-dot yellow"></span><span class="terminal-dot green"></span></span><span>legacy-routes.txt</span></div>
-					<div class="legacy-body"><div><p class="eyebrow">~/miku-wwl $ cat legacy-routes.txt</p><h2 id="legacy-title">The original Astro routes remain online</h2></div><nav class="legacy-links" aria-label="Original portfolio routes"><a href="/about">about <span>→</span></a><a href="/blog">blog <span>→</span></a><a href="/experience">experience <span>→</span></a><a href="/projects">projects <span>→</span></a><a href="/certifications">certifications <span>→</span></a></nav></div>
+					<div class="legacy-body">
+						<div><p class="eyebrow">~/miku-wwl $ cat legacy-routes.txt</p><h2 id="legacy-title">The original Astro routes remain online</h2></div>
+						<nav class="legacy-links" aria-label="Original portfolio routes"><a href="/about">about <span>→</span></a><a href="/blog">blog <span>→</span></a><a href="/experience">experience <span>→</span></a><a href="/projects">projects <span>→</span></a><a href="/certifications">certifications <span>→</span></a></nav>
+					</div>
 				</div>
 			</section>
 		</main>
 		<Footer />
+		<script type="module" src="/scene.js"></script>
 	</body>
 </html>
 
 <style>
-	.portal-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr); gap: 1rem; align-items: stretch; margin-top: 1.5rem; }
-	.intro-window { min-height: 100%; }
-	.hero-command { margin: 0 0 0.5rem; }
-	.intro-window h1 { margin: 0.2rem 0 0.45rem; font-size: clamp(2.2rem, 4vw + 1rem, 4rem); }
-	.hero-tagline { max-width: 75ch; margin: 0 0 0.85rem; color: var(--prompt); font-size: clamp(0.85rem, 0.5vw + 0.75rem, 1rem); line-height: 1.55; }
-	.hero-bio { max-width: 70ch; margin: 0; color: var(--text-muted); font-size: 1rem; }
-	.hero-footer-line { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.5rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.77rem; }
-	.status-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--prompt); box-shadow: 0 0 0 3px var(--award-soft), 0 0 12px var(--prompt); }
-	.map-panel { position: relative; display: flex; flex-direction: column; min-height: 300px; overflow: hidden; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-1); }
-	.map-grid { position: absolute; inset: 0; opacity: 0.45; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(180deg, black, transparent 85%); }
-	.map-panel .eyebrow, .map-readout { position: relative; z-index: 1; }
-	.map-orbit { position: relative; display: grid; place-items: center; flex: 1; min-height: 175px; }
-	.orbit-ring { position: absolute; display: block; border: 1px solid var(--accent); border-radius: 50%; opacity: 0.5; }
-	.ring-one { width: 142px; height: 142px; transform: rotate(28deg) skewX(-18deg); border-color: var(--prompt); }
-	.ring-two { width: 205px; height: 82px; transform: rotate(-25deg); border-color: var(--magenta); }
-	.orbit-core { display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid var(--prompt); border-radius: 50%; color: var(--prompt); background: var(--bg); font: 700 1rem var(--font-mono); box-shadow: 0 0 28px var(--award-soft); }
-	.map-readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
-	.map-readout div { display: grid; gap: 0.15rem; }
-	.map-readout span { color: var(--text-faint); font: 0.65rem var(--font-mono); text-transform: uppercase; }
-	.map-readout strong { color: var(--text); font: 600 0.75rem var(--font-mono); }
-	.launcher-section { margin-top: 3.25rem; }
-	.launcher-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+	:global(.scene-frame) { position: relative; min-height: 300px; overflow: hidden; border: 1px solid rgba(46, 103, 119, 0.5); border-radius: var(--radius-lg); background: radial-gradient(circle at 50% 50%, rgba(12, 111, 111, 0.12), transparent 64%), rgba(2, 11, 19, 0.42); box-shadow: inset 0 0 60px rgba(9, 89, 112, 0.08), var(--shadow-1); }
+	:global(.scene-frame::after) { position: absolute; inset: 0; content: ''; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0 38%, rgba(2, 8, 14, 0.5) 100%); }
+	:global(.scene-frame canvas) { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+	:global(.scene-fallback) { position: absolute; inset: auto 1rem 1rem; z-index: 3; display: none; padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); background: var(--surface-2); font: 0.7rem var(--font-mono); }
+	:global(.scene-fallback-visible .scene-fallback) { display: block; }
+	.hub-main { max-width: 1380px; }
+	.hub-hero { display: grid; grid-template-columns: minmax(250px, 0.82fr) minmax(390px, 1.38fr) 210px; gap: 1.15rem; align-items: stretch; min-height: 370px; margin-top: 0.4rem; }
+	.hub-copy { display: flex; flex-direction: column; justify-content: center; padding: 1rem 0.2rem; }
+	.hub-copy h1 { margin: 0.2rem 0 0.6rem; font-size: clamp(2.6rem, 5vw, 5.2rem); }
+	.hub-tagline { max-width: 42ch; margin: 0 0 1rem; color: var(--prompt); font-size: 0.84rem; line-height: 1.55; }
+	.hub-bio { max-width: 46ch; margin: 0; color: var(--text-muted); font-size: 0.93rem; }
+	.hub-signal { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.68rem; }
+	.hub-visual { position: relative; height: 370px; }
+	:global(.hub-visual .scene-frame) { height: 370px; min-height: 370px; border-color: rgba(39, 201, 255, 0.4); }
+	.scene-label { position: absolute; z-index: 4; color: var(--cyan); font: 0.62rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; }
+	.scene-label-top { top: 0.75rem; left: 1rem; }
+	.scene-label-bottom { right: 1rem; bottom: 0.75rem; color: var(--text-faint); }
+	.hub-hud { align-self: center; }
+	.hud-time { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.6rem; padding-top: 0.65rem; border-top: 1px dashed var(--border); color: var(--text-faint); font-size: 0.66rem; }
+	.hud-time strong { color: var(--text-muted); font-weight: 500; }
+	.launcher-section { margin-top: 2.25rem; }
+	.launcher-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 0.85rem; }
 	.launcher-heading h2 { margin-bottom: 0; }
-	.launcher-hint { margin: 0; color: var(--text-muted); font-size: 0.78rem; }
-	.module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-	.module-card { position: relative; display: flex; flex-direction: column; min-height: 290px; overflow: hidden; padding: 1.1rem 1.15rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); color: var(--text); text-decoration: none; box-shadow: var(--shadow-1); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
-	.module-card:hover { color: var(--text); text-decoration: none; transform: translateY(-5px); border-color: var(--module-color); background: var(--surface-2); box-shadow: 0 0 0 1px var(--module-color), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
+	.launcher-hint { margin: 0; color: var(--text-muted); font-size: 0.7rem; }
+	.module-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+	.module-card { position: relative; display: flex; flex-direction: column; min-height: 290px; overflow: hidden; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: linear-gradient(160deg, rgba(8, 22, 35, 0.92), rgba(3, 11, 19, 0.86)); color: var(--text); text-decoration: none; box-shadow: var(--shadow-1); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+	.module-card:hover { color: var(--text); text-decoration: none; transform: translateY(-5px); border-color: var(--module-color); background: linear-gradient(160deg, color-mix(in srgb, var(--module-color) 10%, var(--surface)), rgba(3, 11, 19, 0.92)); box-shadow: 0 0 0 1px var(--module-color), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
 	.module-card:focus-visible { box-shadow: var(--ring), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
 	.module-card.green { --module-color: var(--prompt); }
-	.module-card.blue { --module-color: var(--accent); }
+	.module-card.cyan { --module-color: var(--accent); }
 	.module-card.violet { --module-color: var(--magenta); }
 	.module-card.amber { --module-color: var(--yellow); }
-	.module-glow { position: absolute; width: 180px; height: 180px; top: -90px; right: -55px; border-radius: 50%; background: var(--module-color); opacity: 0.07; filter: blur(10px); transition: opacity 180ms ease, transform 180ms ease; }
-	.module-card:hover .module-glow { opacity: 0.18; transform: scale(1.3); }
-	.module-topline, .module-title-row { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-	.module-topline { margin-bottom: 1.6rem; color: var(--text-faint); font-size: 0.68rem; }
+	.module-glow { position: absolute; width: 180px; height: 180px; top: -92px; right: -55px; border-radius: 50%; background: var(--module-color); opacity: 0.08; filter: blur(10px); transition: opacity 180ms ease, transform 180ms ease; }
+	.module-card:hover .module-glow { opacity: 0.2; transform: scale(1.3); }
+	.module-topline, .module-title-row { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; }
+	.module-topline { margin-bottom: 1.35rem; color: var(--text-faint); font-size: 0.62rem; }
 	.module-id, .module-status { font-family: var(--font-mono); letter-spacing: 0.08em; }
-	.module-status { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--module-color); }
+	.module-status { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--module-color); }
 	.module-status .status-dot { width: 5px; height: 5px; box-shadow: 0 0 8px var(--module-color); background: var(--module-color); }
-	.module-icon { position: relative; z-index: 1; display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 1rem; border: 1px solid color-mix(in srgb, var(--module-color) 50%, var(--border)); border-radius: var(--radius); color: var(--module-color); background: color-mix(in srgb, var(--module-color) 8%, var(--surface)); font: 1.8rem var(--font-mono); }
+	.module-icon { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 0.9rem; border: 1px solid color-mix(in srgb, var(--module-color) 50%, var(--border)); border-radius: var(--radius); color: var(--module-color); background: color-mix(in srgb, var(--module-color) 8%, var(--surface)); font: 1.6rem var(--font-mono); }
 	.module-title-row { align-items: baseline; }
-	.module-title-row h3 { margin: 0; font-size: clamp(1.15rem, 1vw + 0.9rem, 1.45rem); }
-	.module-arrow { color: var(--module-color); font: 700 1.35rem var(--font-mono); transition: transform 180ms ease; }
+	.module-title { font: 600 clamp(0.95rem, 1vw, 1.15rem)/1.25 var(--font-mono); }
+	.module-arrow { color: var(--module-color); font: 700 1.3rem var(--font-mono); transition: transform 180ms ease; }
 	.module-card:hover .module-arrow { transform: translate(3px, -3px); }
-	.module-command { margin: 0.65rem 0 0.8rem; color: var(--module-color); font-size: 0.75rem; }
-	.module-copy { max-width: 46ch; color: var(--text-muted); font-size: 0.92rem; }
-	.module-meta { margin-top: auto; padding-top: 1.3rem; color: var(--text-faint); font-size: 0.7rem; }
-	.legacy-section { margin-top: 2.5rem; }
+	.module-command { margin: 0.6rem 0 0.75rem; color: var(--module-color); font-size: 0.66rem; }
+	.module-copy { color: var(--text-muted); font-size: 0.78rem; line-height: 1.55; }
+	.module-meta { margin-top: auto; padding-top: 1rem; color: var(--text-faint); font-size: 0.61rem; }
+	.legacy-section { margin-top: 1.75rem; }
 	.legacy-window { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-	.legacy-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); font: 0.78rem var(--font-mono); }
-	.legacy-body { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: 1.1rem 1.25rem 1.2rem; }
-	.legacy-body h2 { margin: 0; font-size: 1.05rem; }
-	.legacy-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; }
-	.legacy-links a { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); font: 0.74rem var(--font-mono); text-decoration: none; transition: color 120ms ease, border-color 120ms ease, transform 120ms ease; }
+	.legacy-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); font: 0.7rem var(--font-mono); }
+	.legacy-body { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: 0.95rem 1.1rem 1rem; }
+	.legacy-body h2 { margin: 0; font-size: 0.95rem; }
+	.legacy-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.4rem; }
+	.legacy-links a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.55rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); font: 0.66rem var(--font-mono); text-decoration: none; transition: color 120ms ease, border-color 120ms ease, transform 120ms ease; }
 	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
 	.legacy-links span { color: var(--accent); }
-	@media (max-width: 820px) { .portal-hero { grid-template-columns: 1fr; } .map-panel { min-height: 240px; } }
-	@media (max-width: 620px) { .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 250px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.45rem; } .legacy-links { justify-content: flex-start; margin-top: 1rem; } }
+	@media (max-width: 1100px) { .hub-hero { grid-template-columns: minmax(230px, 0.85fr) minmax(330px, 1.15fr); } .hub-hud { grid-column: 1 / -1; } .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@media (max-width: 680px) { .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-visual, :global(.hub-visual .scene-frame) { height: 290px; min-height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
 	@media (prefers-reduced-motion: reduce) { .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>

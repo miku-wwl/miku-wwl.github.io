@@ -19,7 +19,7 @@ const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="color-scheme" content="dark light" />
-<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content="#030a12" media="(prefers-color-scheme: dark)" />
 <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="sitemap" href="/sitemap-index.xml" />
@@ -44,8 +44,7 @@ const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
 	(function () {
 		try {
 			var stored = localStorage.getItem('theme');
-			var prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-			var theme = stored || prefers;
+			var theme = stored || 'dark';
 			document.documentElement.setAttribute('data-theme', theme);
 		} catch (_) {
 			document.documentElement.setAttribute('data-theme', 'dark');
