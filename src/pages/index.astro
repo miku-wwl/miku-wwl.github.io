@@ -125,15 +125,15 @@ const modules = [
 </html>
 
 <style>
-	:global(.scene-frame) { position: relative; min-height: 300px; overflow: hidden; border: 1px solid rgba(46, 103, 119, 0.5); border-radius: var(--radius-lg); background: radial-gradient(circle at 50% 50%, rgba(12, 111, 111, 0.12), transparent 64%), rgba(2, 11, 19, 0.42); box-shadow: inset 0 0 60px rgba(9, 89, 112, 0.08), var(--shadow-1); }
-	:global(.scene-frame::after) { position: absolute; inset: 0; content: ''; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0 38%, rgba(2, 8, 14, 0.5) 100%); }
+	:global(.scene-frame) { position: relative; min-height: 300px; overflow: hidden; border: 1px solid rgba(46, 103, 119, 0.34); border-radius: var(--radius-lg); background: radial-gradient(circle at 50% 54%, rgba(12, 111, 111, 0.14), transparent 68%), rgba(2, 11, 19, 0.18); box-shadow: inset 0 0 80px rgba(9, 89, 112, 0.1); }
+	:global(.scene-frame::after) { position: absolute; inset: 0; content: ''; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0 48%, rgba(2, 8, 14, 0.25) 100%); }
 	:global(.scene-frame canvas) { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
 	:global(.scene-fallback) { position: absolute; inset: auto 1rem 1rem; z-index: 3; display: none; padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); background: var(--surface-2); font: 0.7rem var(--font-mono); }
 	:global(.scene-fallback-visible .scene-fallback) { display: block; }
 	.hub-main { max-width: 1380px; }
 	.hub-hero { display: grid; grid-template-columns: minmax(250px, 0.82fr) minmax(390px, 1.38fr) 210px; gap: 1.15rem; align-items: stretch; min-height: 370px; margin-top: 0.4rem; }
 	.hub-copy { display: flex; flex-direction: column; justify-content: center; padding: 1rem 0.2rem; }
-	.hub-copy h1 { margin: 0.2rem 0 0.6rem; font-size: clamp(2.6rem, 5vw, 5.2rem); }
+	.hub-copy h1 { margin: 0.2rem 0 0.6rem; font-size: clamp(2.35rem, 3.5vw, 3.9rem); white-space: nowrap; }
 	.hub-tagline { max-width: 42ch; margin: 0 0 1rem; color: var(--prompt); font-size: 0.84rem; line-height: 1.55; }
 	.hub-bio { max-width: 46ch; margin: 0; color: var(--text-muted); font-size: 0.93rem; }
 	.hub-signal { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.68rem; }
@@ -150,7 +150,7 @@ const modules = [
 	.launcher-heading h2 { margin-bottom: 0; }
 	.launcher-hint { margin: 0; color: var(--text-muted); font-size: 0.7rem; }
 	.module-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
-	.module-card { position: relative; display: flex; flex-direction: column; min-height: 290px; overflow: hidden; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: linear-gradient(160deg, rgba(8, 22, 35, 0.92), rgba(3, 11, 19, 0.86)); color: var(--text); text-decoration: none; box-shadow: var(--shadow-1); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+	.module-card { position: relative; display: flex; flex-direction: column; min-height: 260px; overflow: hidden; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: linear-gradient(160deg, rgba(8, 22, 35, 0.92), rgba(3, 11, 19, 0.86)); color: var(--text); text-decoration: none; box-shadow: var(--shadow-1); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
 	.module-card:hover { color: var(--text); text-decoration: none; transform: translateY(-5px); border-color: var(--module-color); background: linear-gradient(160deg, color-mix(in srgb, var(--module-color) 10%, var(--surface)), rgba(3, 11, 19, 0.92)); box-shadow: 0 0 0 1px var(--module-color), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
 	.module-card:focus-visible { box-shadow: var(--ring), 0 18px 40px color-mix(in srgb, var(--module-color) 18%, transparent); }
 	.module-card.green { --module-color: var(--prompt); }
@@ -182,6 +182,6 @@ const modules = [
 	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
 	.legacy-links span { color: var(--accent); }
 	@media (max-width: 1100px) { .hub-hero { grid-template-columns: minmax(230px, 0.85fr) minmax(330px, 1.15fr); } .hub-hud { grid-column: 1 / -1; } .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 680px) { .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-visual, :global(.hub-visual .scene-frame) { height: 290px; min-height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
+	@media (max-width: 680px) { .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual, :global(.hub-visual .scene-frame) { height: 290px; min-height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
 	@media (prefers-reduced-motion: reduce) { .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>
