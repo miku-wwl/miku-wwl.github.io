@@ -86,11 +86,11 @@ const modules = [
 				};
 
 				video.addEventListener('timeupdate', () => {
-					if (video.currentTime >= 2.5) reveal();
+					if (video.currentTime >= 1.8) reveal();
 				});
 				video.addEventListener('ended', reveal, { once: true });
 				video.addEventListener('error', reveal, { once: true });
-				window.setTimeout(reveal, 3100);
+				window.setTimeout(reveal, 2400);
 				const playback = video.play();
 				if (playback?.catch) playback.catch(reveal);
 			})();
