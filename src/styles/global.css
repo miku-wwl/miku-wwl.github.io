@@ -246,20 +246,6 @@ input, textarea, button, select {
 	content: '❯ ';
 	color: var(--accent);
 }
-.caret {
-	display: inline-block;
-	width: 0.55ch;
-	height: 1em;
-	background: var(--prompt);
-	margin-left: 2px;
-	transform: translateY(2px);
-	animation: blink 1.05s steps(2, end) infinite;
-}
-@keyframes blink {
-	0%, 50% { opacity: 1; }
-	50.01%, 100% { opacity: 0; }
-}
-
 /* Section helpers */
 .section { margin: 2.5rem 0; }
 .eyebrow {
