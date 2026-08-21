@@ -10,6 +10,14 @@ const COLORS = {
 	deep: 0x071521,
 };
 
+const STAR_CONFIGS = {
+	hub: { mode: 'galaxy', seed: 71, density: 0.58, secondarySeed: 113, secondaryDensity: 0.55, variant: 'hub' },
+	career: { mode: 'deep', seed: 211, density: 0.9, secondarySeed: 311, secondaryDensity: 0.42, variant: 'career' },
+	projects: { mode: 'deep', seed: 337, density: 0.78, secondarySeed: 431, secondaryDensity: 0.5, variant: 'projects' },
+	vault: { mode: 'deep', seed: 503, density: 0.7, secondarySeed: 607, secondaryDensity: 0.38, variant: 'vault' },
+	lab: { mode: 'galaxy', seed: 719, density: 0.68, secondarySeed: 811, secondaryDensity: 0.5, variant: 'lab' },
+};
+
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const isSmallViewport = () => window.matchMedia('(max-width: 720px)').matches;
 let glowTexture;
@@ -120,12 +128,12 @@ function surfaceMaterial(graph, color, opacity = 0.6, pattern = 1, blending = TH
 			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
 			'  float facing = abs(dot(normalize(vNormal), viewDirection));',
 			'  float rim = pow(1.0 - facing, 2.1);',
-			'  float latitude = 1.0 - smoothstep(0.02, 0.08, abs(sin((vUv.y + uTime * 0.006) * 26.0)));',
-			'  float longitude = 1.0 - smoothstep(0.03, 0.12, abs(sin((vUv.x - uTime * 0.004) * 18.0)));',
-			'  float flecks = step(0.987, hash21(floor(vUv * vec2(46.0, 28.0))));',
-			'  float pattern = uPattern < 0.5 ? flecks * 0.82 : longitude * 0.055 + latitude * 0.06 + flecks * 0.82;',
-			'  vec3 color = uColor * (0.18 + rim * 1.65 + pattern);',
-			'  float alpha = uOpacity * (0.1 + rim * 0.9 + pattern * 0.1);',
+			'  float flecks = smoothstep(0.985, 0.999, hash21(floor(vUv * vec2(54.0, 36.0))));',
+			'  float waves = 0.5 + 0.5 * sin(vUv.x * 17.0 + sin(vUv.y * 9.0) * 2.6 + uTime * 0.006);',
+			'  float blotches = smoothstep(0.28, 0.78, waves * 0.68 + hash21(floor(vUv * vec2(12.0, 9.0))) * 0.32);',
+			'  float pattern = uPattern < 0.5 ? flecks * 0.82 : blotches * 0.22 + flecks * 0.76;',
+			'  vec3 color = uColor * (0.16 + rim * 1.8 + pattern * 0.72);',
+			'  float alpha = uOpacity * (0.18 + rim * 0.82 + pattern * 0.22);',
 			'  gl_FragColor = vec4(color, alpha);',
 			'}',
 		].join('\n'),
@@ -208,20 +216,24 @@ function planetMaterial(graph, options = {}) {
 			'void main() {',
 			'  vec3 normal = normalize(vPlanetPosition);',
 			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
-			'  float cloudField = fbm(normal * 4.0 + vec3(0.0, uTime * 0.004, 0.0));',
-			'  float surfaceVariation = noise3(normal * 18.0 - vec3(uTime * 0.004, 0.0, uTime * 0.002));',
-			'  float light = max(dot(normal, normalize(vec3(-0.45, 0.62, 0.92))), 0.0);',
-			'  vec3 oceanColor = mix(uOcean, uOceanLight, 0.34 + cloudField * 0.18);',
-			'  vec3 color = oceanColor + uLandShadow * (surfaceVariation - 0.5) * 0.045;',
-			'  float surfaceDots = smoothstep(0.93, 0.995, hash13(floor(normal * 64.0) + vec3(7.0, 13.0, 5.0)));',
-			'  float fineDots = smoothstep(0.97, 0.999, hash13(floor(normal * 118.0) + vec3(2.0, 19.0, 11.0)));',
+			'  float cloudField = fbm(normal * 3.6 + vec3(0.0, uTime * 0.006, 0.0));',
+			'  float continentField = fbm(normal * 2.7 + vec3(8.0, -3.0, 5.0));',
+			'  float coastNoise = noise3(normal * 11.0 + vec3(uTime * 0.002, 4.0, 0.0));',
+			'  float landMask = smoothstep(0.56, 0.74, continentField + (coastNoise - 0.5) * 0.2);',
+			'  float surfaceVariation = fbm(normal * 15.0 - vec3(uTime * 0.004, 0.0, uTime * 0.002));',
+			'  float light = max(dot(normal, normalize(vec3(-0.48, 0.58, 0.94))), 0.0);',
+			'  vec3 oceanColor = mix(uOcean, uOceanLight, 0.14 + cloudField * 0.22);',
+			'  vec3 landColor = mix(uLandShadow, uLand, smoothstep(0.28, 0.78, surfaceVariation));',
+			'  vec3 color = mix(oceanColor, landColor, landMask);',
+			'  float surfaceDots = smoothstep(0.91, 0.995, hash13(floor(normal * 70.0) + vec3(7.0, 13.0, 5.0)));',
+			'  float fineDots = smoothstep(0.965, 0.999, hash13(floor(normal * 132.0) + vec3(2.0, 19.0, 11.0)));',
 			'  float facing = max(dot(normalize(vPlanetNormal), viewDirection), 0.0);',
 			'  float rim = pow(1.0 - facing, 2.6);',
-			'  float nightLights = surfaceDots * (1.0 - light) * 0.72;',
+			'  float nightLights = (surfaceDots * 0.7 + fineDots * 0.32) * (1.0 - smoothstep(0.02, 0.34, light)) * 0.92;',
 			'  float specular = pow(max(dot(reflect(-viewDirection, normal), normalize(vec3(-0.45, 0.62, 0.92))), 0.0), 26.0);',
-			'  color *= 0.72 + light * 0.44;',
-			'  color += uLand * (surfaceDots * 0.7 + fineDots * 0.46 + nightLights * 0.7);',
-			'  color += uOceanLight * specular * 0.38 + uLand * rim * 0.18;',
+			'  color *= 0.2 + light * 0.88;',
+			'  color += uLand * (surfaceDots * 0.35 + fineDots * 0.18 + nightLights * 0.9);',
+			'  color += uOceanLight * specular * 0.52 + uLand * rim * 0.28;',
 			'  gl_FragColor = vec4(color, uOpacity);',
 			'}',
 		].join('\n'),
@@ -268,9 +280,9 @@ function cloudMaterial(graph, color = COLORS.white) {
 			'void main() {',
 			'  vec3 normal = normalize(vCloudNormal);',
 			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
-			'  float cloud = smoothstep(0.49, 0.64, noise3(normal * 4.8 + vec3(uTime * 0.012, 0.0, uTime * 0.006)));',
+			'  float cloud = smoothstep(0.46, 0.66, noise3(normal * 4.8 + vec3(uTime * 0.012, 0.0, uTime * 0.006)));',
 			'  float rim = pow(1.0 - max(dot(normal, viewDirection), 0.0), 2.0);',
-			'  gl_FragColor = vec4(uColor, cloud * (0.16 + rim * 0.16));',
+			'  gl_FragColor = vec4(uColor, cloud * (0.24 + rim * 0.22));',
 			'}',
 		].join('\n'),
 		transparent: true,
@@ -317,7 +329,7 @@ function addPlanet(graph, parent, options = {}) {
 	planet.position.copy(options.position || new THREE.Vector3());
 	planet.userData.phase = (planet.position.x + planet.position.y * 0.7) * 0.8;
 	planet.userData.label = options.label || 'planet';
-	const detail = isSmallViewport() ? 28 : 52;
+	const detail = isSmallViewport() ? 32 : 64;
 	const geometry = new THREE.SphereGeometry(radius, detail, Math.max(18, Math.round(detail * 0.65)));
 	const body = new THREE.Mesh(geometry, planetMaterial(graph, options));
 	const clouds = new THREE.Mesh(
@@ -338,7 +350,7 @@ function addPlanet(graph, parent, options = {}) {
 			depthTest: false,
 			blending: THREE.AdditiveBlending,
 		}));
-		emblem.scale.setScalar(radius * 0.62);
+		emblem.scale.setScalar(radius * 0.68);
 		emblem.position.z = radius * 1.015;
 		planet.add(emblem);
 		planet.userData.emblem = emblem;
@@ -346,6 +358,17 @@ function addPlanet(graph, parent, options = {}) {
 	planet.userData.body = body;
 	planet.userData.clouds = clouds;
 	planet.userData.atmosphere = atmosphere;
+	const corona = new THREE.Sprite(new THREE.SpriteMaterial({
+		map: getGlowTexture(),
+		color: options.atmosphereColor || options.oceanLight || COLORS.cyan,
+		transparent: true,
+		opacity: options.coronaOpacity || 0.055,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending,
+	}));
+	corona.scale.setScalar(radius * 2.7);
+	planet.add(corona);
+	planet.userData.corona = corona;
 	parent.add(planet);
 	return planet;
 }
@@ -367,7 +390,7 @@ function particleMaterial(graph, opacity = 0.7) {
 			'  p.y += sin(uTime * 0.18 + aTwinkle * 6.283) * 0.008;',
 			'  vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);',
 			'  gl_Position = projectionMatrix * viewPosition;',
-			'  gl_PointSize = min(10.0, max(1.0, aSize * 42.0 / max(1.0, -viewPosition.z)));',
+			'  gl_PointSize = min(14.0, max(1.15, aSize * 52.0 / max(1.0, -viewPosition.z)));',
 			'}',
 		].join('\n'),
 		fragmentShader: [
@@ -377,9 +400,11 @@ function particleMaterial(graph, opacity = 0.7) {
 			'void main() {',
 			'  float distanceFromCenter = distance(gl_PointCoord, vec2(0.5));',
 			'  if (distanceFromCenter > 0.5) discard;',
-			'  float softness = pow(1.0 - distanceFromCenter * 2.0, 1.65);',
+			'  float softness = pow(1.0 - distanceFromCenter * 2.0, 1.45);',
+			'  float core = exp(-distanceFromCenter * distanceFromCenter * 32.0);',
+			'  float halo = exp(-distanceFromCenter * distanceFromCenter * 7.0);',
 			'  float twinkle = 0.78 + 0.22 * sin(vTwinkle * 20.0);',
-			'  gl_FragColor = vec4(vColor * (0.55 + softness * 0.9), softness * uOpacity * twinkle);',
+			'  gl_FragColor = vec4(vColor * (0.32 + softness * 0.7 + core * 1.25), (halo * 0.38 + core * 0.72) * uOpacity * twinkle);',
 			'}',
 		].join('\n'),
 		transparent: true,
@@ -399,9 +424,9 @@ function addParticleSet(graph, parent, positions, colors, sizes, twinkles, opaci
 	return points;
 }
 
-function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1) {
+function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1, variant = 'balanced') {
 	const random = seededRandom(seed);
-	const baseCount = small ? 340 : mode === 'galaxy' ? 1800 : 1150;
+	const baseCount = small ? 720 : mode === 'galaxy' ? 2600 : 1900;
 	const count = Math.max(80, Math.round(baseCount * density));
 	const positions = [];
 	const colors = [];
@@ -411,12 +436,13 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1
 	const haloColors = [];
 	const haloSizes = [];
 	const haloTwinkles = [];
-	const palette = [
-		new THREE.Color(COLORS.cyan),
-		new THREE.Color(COLORS.green),
-		new THREE.Color(COLORS.violet),
-		new THREE.Color(COLORS.white),
-	];
+	const palette = variant.startsWith('career')
+		? [new THREE.Color(COLORS.green), new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.white), new THREE.Color(COLORS.violet)]
+		: variant.startsWith('projects')
+			? [new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.violet), new THREE.Color(COLORS.white), new THREE.Color(COLORS.green)]
+			: variant.startsWith('vault')
+				? [new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.violet), new THREE.Color(COLORS.green), new THREE.Color(COLORS.white)]
+				: [new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.green), new THREE.Color(COLORS.violet), new THREE.Color(COLORS.white)];
 	for (let index = 0; index < count; index += 1) {
 		let x;
 		let y;
@@ -425,22 +451,24 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1
 		const normalY = seededNormal(random);
 		const normalZ = seededNormal(random);
 
-		if (mode === 'galaxy' && random() < 0.64) {
-			// Four noisy spiral arms: dense near the core, stretched into a
-			// shallow disk so the field reads as a galaxy behind the scene.
+		if (mode === 'galaxy' && random() < (variant === 'lab' ? 0.48 : 0.38)) {
+			// A restrained spiral component gives the scene a galaxy signature,
+			// while the wider y/z spread keeps it from collapsing into a neon band.
 			const armIndex = Math.floor(random() * 4);
-			const radius = 0.42 + Math.pow(random(), 0.58) * 8.4;
-			const angle = radius * 0.92 + armIndex * (Math.PI * 0.5) + normalX * 0.2;
-			const armWidth = 0.12 + radius * 0.045;
-			x = Math.cos(angle) * radius * 1.5 + normalY * armWidth;
-			y = Math.sin(angle * 1.7) * 0.12 + normalZ * (0.18 + radius * 0.07);
-			z = -4.9 + Math.sin(angle) * radius * 0.22 + normalX * 0.62;
+			const radius = 0.3 + Math.pow(random(), 0.58) * 6.7;
+			const angle = radius * 0.72 + armIndex * (Math.PI * 0.5) + normalX * 0.18;
+			const armWidth = 0.045 + radius * 0.055;
+			x = Math.cos(angle) * radius * 1.25 + normalY * armWidth;
+			y = Math.sin(angle * 1.45) * 0.28 + normalZ * (0.24 + radius * 0.105);
+			z = -2.15 - radius * 0.18 + normalX * 1.02;
 		} else {
-			// Deep-field layers use a soft volume instead of a flat uniform grid.
+			// Deep-field strata use a soft volume instead of a flat uniform grid.
 			const depth = random();
-			x = normalX * (3.2 + depth * 4.6);
-			y = normalY * (1.15 + depth * 2.4);
-			z = -3.2 - depth * 7.5 + normalZ * 0.45;
+			const width = variant === 'vault' ? 2.1 : 2.35;
+			const height = variant === 'projects' ? 1.35 : 1.55;
+			x = normalX * (width + depth * 4.8);
+			y = normalY * (height + depth * 2.45);
+			z = -1.45 - depth * 8.7 + normalZ * 0.72;
 		}
 
 		positions.push(x, y, z);
@@ -449,12 +477,12 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1
 			? palette[0]
 			: colorRoll < 0.72
 				? palette[1]
-				: colorRoll < 0.9
+				: colorRoll < 0.93
 					? palette[2]
 					: palette[3];
-		const intensity = 0.68 + Math.pow(random(), 3.0) * 0.66;
+		const intensity = 0.44 + Math.pow(random(), 2.8) * 1.22;
 		colors.push(color.r * intensity, color.g * intensity, color.b * intensity);
-		const size = 0.075 + Math.pow(random(), 5.0) * (mode === 'galaxy' ? 2.7 : 1.95);
+		const size = 0.055 + Math.pow(random(), 5.3) * (mode === 'galaxy' ? 3.25 : 2.45);
 		const twinkle = random();
 		sizes.push(size);
 		twinkles.push(twinkle);
@@ -465,9 +493,9 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1
 			haloTwinkles.push(twinkle);
 		}
 	}
-	const points = addParticleSet(graph, scene, positions, colors, sizes, twinkles, mode === 'galaxy' ? 0.8 : 0.67);
+	const points = addParticleSet(graph, scene, positions, colors, sizes, twinkles, mode === 'galaxy' ? 0.86 : 0.82);
 	if (haloPositions.length > 0) {
-		addParticleSet(graph, scene, haloPositions, haloColors, haloSizes, haloTwinkles, mode === 'galaxy' ? 0.1 : 0.07);
+		addParticleSet(graph, scene, haloPositions, haloColors, haloSizes, haloTwinkles, mode === 'galaxy' ? 0.18 : 0.13);
 	}
 	return points;
 }
@@ -511,10 +539,10 @@ function addGridFloor(graph, scene, color = COLORS.cyan, y = -1.45, z = -0.4, op
 			'uniform float uOpacity;',
 			'varying vec2 vUv;',
 			'void main() {',
-			'  vec2 cell = abs(fract(vUv * vec2(28.0, 18.0)) - 0.5);',
+			'  vec2 cell = abs(fract(vUv * vec2(22.0, 14.0)) - 0.5);',
 			'  float line = 1.0 - smoothstep(0.465, 0.5, max(cell.x, cell.y));',
 			'  float fade = 1.0 - smoothstep(0.12, 0.78, length(vUv - vec2(0.5, 0.37)));',
-			'  gl_FragColor = vec4(uColor, line * fade * uOpacity);',
+			'  gl_FragColor = vec4(uColor, line * fade * uOpacity * 0.72);',
 			'}',
 		].join('\n'),
 		transparent: true,
@@ -529,14 +557,15 @@ function addGridFloor(graph, scene, color = COLORS.cyan, y = -1.45, z = -0.4, op
 	return floor;
 }
 
-function addBackdrop(graph, scene, small, mode = 'deep') {
-	addStarField(graph, scene, small, mode === 'galaxy' ? 71 : 19, mode, mode === 'galaxy' ? 1 : 0.9);
-	if (!small) addStarField(graph, scene, false, 113, 'deep', mode === 'galaxy' ? 0.6 : 0.72);
+function addBackdrop(graph, scene, small, kind = 'hub') {
+	const config = STAR_CONFIGS[kind] || STAR_CONFIGS.hub;
+	addStarField(graph, scene, small, config.seed, config.mode, config.density, config.variant);
+	if (!small) addStarField(graph, scene, false, config.secondarySeed, 'deep', config.secondaryDensity, `${config.variant}-secondary`);
 	const nebulaMaterial = registerMaterial(graph, new THREE.ShaderMaterial({
 		uniforms: {
-			uPrimary: { value: new THREE.Color(mode === 'galaxy' ? COLORS.cyan : COLORS.violet) },
-			uSecondary: { value: new THREE.Color(mode === 'galaxy' ? COLORS.green : COLORS.cyan) },
-			uOpacity: { value: mode === 'galaxy' ? 0.12 : 0.08 },
+			uPrimary: { value: new THREE.Color(config.mode === 'galaxy' ? COLORS.cyan : COLORS.violet) },
+			uSecondary: { value: new THREE.Color(config.mode === 'galaxy' ? COLORS.green : COLORS.cyan) },
+			uOpacity: { value: config.mode === 'galaxy' ? 0.052 : 0.042 },
 			uTime: { value: 0 },
 		},
 		vertexShader: [
@@ -713,7 +742,7 @@ function addLineBox(parent, size, position, color, rotation = [0, 0, 0], opacity
 
 function buildHub(graph, small) {
 	const root = new THREE.Group();
-	root.scale.setScalar(small ? 0.9 : 1.18);
+	root.scale.setScalar(small ? 0.9 : 1.24);
 	root.position.set(0.05, 0.04, 0.18);
 	graph.add(root);
 	addGridFloor(graph, root, COLORS.cyan, -1.42, -0.82, 0.085);
@@ -721,7 +750,7 @@ function buildHub(graph, small) {
 	const globe = new THREE.Group();
 	root.add(globe);
 	addPlanet(graph, globe, {
-		radius: 0.62,
+		radius: 0.72,
 		ocean: 0x095266,
 		oceanLight: 0x16d2c8,
 		land: 0x20f6a7,
@@ -767,7 +796,7 @@ function buildHub(graph, small) {
 
 function buildCareer(graph, small) {
 	const root = new THREE.Group();
-	root.scale.setScalar(small ? 0.9 : 1.22);
+	root.scale.setScalar(small ? 0.9 : 1.3);
 	root.position.set(0, -0.02, 0.12);
 	graph.add(root);
 	addGridFloor(graph, root, COLORS.cyan, -1.35, -0.62, 0.09);
@@ -792,7 +821,7 @@ function buildCareer(graph, small) {
 	], COLORS.violet, 0.012, 0.48);
 	const huawei = addPlanet(graph, root, {
 		position: new THREE.Vector3(-2.15, -0.98, 0.38),
-		radius: 0.29,
+		radius: 0.36,
 		ocean: 0x08475a,
 		oceanLight: 0x11d8c2,
 		land: COLORS.green,
@@ -803,7 +832,7 @@ function buildCareer(graph, small) {
 	});
 	const okx = addPlanet(graph, root, {
 		position: new THREE.Vector3(0.56, 0.38, 0.7),
-		radius: 0.24,
+		radius: 0.31,
 		ocean: 0x08485c,
 		oceanLight: COLORS.cyan,
 		land: 0x2be6d0,
@@ -813,11 +842,11 @@ function buildCareer(graph, small) {
 		label: 'OKX planet',
 	});
 	const nodes = [
-		[new THREE.Vector3(-0.42, -0.18, 0.5), COLORS.cyan, 0.13],
-		[new THREE.Vector3(0.25, 0.86, -0.05), COLORS.violet, 0.145],
-		[new THREE.Vector3(0.87, 1.28, 0.34), COLORS.white, 0.1],
-		[new THREE.Vector3(1.4, -0.28, -0.42), COLORS.violet, 0.11],
-		[new THREE.Vector3(1.76, 1.08, 0.42), COLORS.green, 0.09],
+		[new THREE.Vector3(-0.42, -0.18, 0.5), COLORS.cyan, 0.17],
+		[new THREE.Vector3(0.25, 0.86, -0.05), COLORS.violet, 0.19],
+		[new THREE.Vector3(0.87, 1.28, 0.34), COLORS.white, 0.13],
+		[new THREE.Vector3(1.4, -0.28, -0.42), COLORS.violet, 0.145],
+		[new THREE.Vector3(1.76, 1.08, 0.42), COLORS.green, 0.12],
 	];
 	nodes.forEach(([position, color, size], index) => {
 		const node = addGlowNode(graph, root, position, color, size, index === 1 ? 1.05 : 0.78);
@@ -879,7 +908,7 @@ function addServiceVolume(graph, parent, size, position, color, rotation = [0, 0
 
 function buildProjects(graph, small) {
 	const root = new THREE.Group();
-	root.scale.setScalar(small ? 0.84 : 1.1);
+	root.scale.setScalar(small ? 0.84 : 1.18);
 	root.position.set(0, -0.08, 0.15);
 	graph.add(root);
 	addGridFloor(graph, root, COLORS.cyan, -1.42, -0.72, 0.1);
@@ -892,12 +921,12 @@ function buildProjects(graph, small) {
 	addServiceVolume(graph, root, [0.36, 0.82, 0.36], [0.3, 0.34, 0.2], COLORS.green, [0.02, -0.04, 0.02]);
 
 	const nodes = {
-		api: addGlowNode(graph, root, new THREE.Vector3(-1.58, 0.4, 0.58), COLORS.cyan, 0.2, 1.3),
-		worker: addGlowNode(graph, root, new THREE.Vector3(-0.68, 0.02, 0.2), COLORS.green, 0.17, 1.15),
-		database: addGlowNode(graph, root, new THREE.Vector3(0.08, -0.48, 0.6), COLORS.violet, 0.16, 1),
-		control: addGlowNode(graph, root, new THREE.Vector3(0.78, 0.64, -0.18), COLORS.cyan, 0.22, 1.35),
-		cloud: addGlowNode(graph, root, new THREE.Vector3(1.78, 0.98, 0.72), COLORS.green, 0.17, 1.12),
-		telemetry: addGlowNode(graph, root, new THREE.Vector3(1.55, -0.68, -0.52), COLORS.violet, 0.12, 0.9),
+		api: addGlowNode(graph, root, new THREE.Vector3(-1.58, 0.4, 0.58), COLORS.cyan, 0.25, 1.3),
+		worker: addGlowNode(graph, root, new THREE.Vector3(-0.68, 0.02, 0.2), COLORS.green, 0.21, 1.15),
+		database: addGlowNode(graph, root, new THREE.Vector3(0.08, -0.48, 0.6), COLORS.violet, 0.2, 1),
+		control: addGlowNode(graph, root, new THREE.Vector3(0.78, 0.64, -0.18), COLORS.cyan, 0.27, 1.35),
+		cloud: addGlowNode(graph, root, new THREE.Vector3(1.78, 0.98, 0.72), COLORS.green, 0.22, 1.12),
+		telemetry: addGlowNode(graph, root, new THREE.Vector3(1.55, -0.68, -0.52), COLORS.violet, 0.15, 0.9),
 	};
 	Object.values(nodes).forEach((node, index) => graph.userData.breathing.push({ node, amount: index === 3 ? 0.07 : 0.035 }));
 	const routes = [
@@ -919,7 +948,7 @@ function buildProjects(graph, small) {
 
 function buildVault(graph, small) {
 	const root = new THREE.Group();
-	root.scale.setScalar(small ? 0.92 : 1.2);
+	root.scale.setScalar(small ? 0.92 : 1.25);
 	root.position.set(0, -0.02, 0.1);
 	graph.add(root);
 	addGridFloor(graph, root, COLORS.violet, -1.3, -0.7, 0.06);
@@ -936,9 +965,9 @@ function buildVault(graph, small) {
 	addArchiveSlab(graph, root, [0.62, 1.2, 0.025], [-0.02, 0.12, -0.46], COLORS.cyan, [0.08, 0.18, 0.04]);
 	addArchiveSlab(graph, root, [0.76, 0.025, 1.12], [0.06, 0.02, 0.2], COLORS.violet, [0.14, -0.24, -0.08]);
 	addArchiveSlab(graph, root, [0.025, 1.0, 0.66], [0.48, 0.08, 0.04], COLORS.green, [-0.12, 0.2, 0.18]);
-	const vaultBox = addLineBox(root, [1.28, 1.34, 1.02], [0, 0.18, 0.2], COLORS.cyan, [0.08, 0.18, 0.04], 0.3);
+	const vaultBox = addLineBox(root, [1.46, 1.52, 1.16], [0, 0.18, 0.2], COLORS.cyan, [0.08, 0.18, 0.04], 0.3);
 	const sealPlanet = addPlanet(graph, seal, {
-		radius: 0.45,
+		radius: 0.54,
 		ocean: 0x08475a,
 		oceanLight: 0x11d8c2,
 		land: COLORS.green,
@@ -997,7 +1026,7 @@ function buildVault(graph, small) {
 
 function buildLab(graph, small) {
 	const root = new THREE.Group();
-	root.scale.setScalar(small ? 0.88 : 1.12);
+	root.scale.setScalar(small ? 0.88 : 1.18);
 	root.position.set(0, 0.04, 0.1);
 	graph.add(root);
 	addGridFloor(graph, root, COLORS.cyan, -1.38, -0.8, 0.08);
@@ -1024,7 +1053,7 @@ function buildLab(graph, small) {
 	root.add(platformRing);
 
 	const core = new THREE.LineSegments(
-		new THREE.EdgesGeometry(new THREE.BoxGeometry(0.94, 0.94, 0.94)),
+		new THREE.EdgesGeometry(new THREE.BoxGeometry(1.12, 1.12, 1.12)),
 		new THREE.LineBasicMaterial({
 			color: COLORS.cyan,
 			transparent: true,
@@ -1037,7 +1066,7 @@ function buildLab(graph, small) {
 	root.add(core);
 	const corePlanet = addPlanet(graph, root, {
 		position: new THREE.Vector3(0, 0.28, 0.2),
-		radius: 0.17,
+		radius: 0.24,
 		ocean: 0x063b60,
 		oceanLight: COLORS.cyan,
 		land: 0x4be4ff,
@@ -1060,10 +1089,10 @@ function buildLab(graph, small) {
 	const coreOrbit = addArchiveRing(graph, root, 0.72, COLORS.cyan, [0, 0.28, 0.2], [0.72, 0.18, 0.14], 0.34);
 
 	const nodes = [
-		[new THREE.Vector3(-1.7, -0.12, 0.82), COLORS.green, 0.11],
-		[new THREE.Vector3(1.48, 0.62, -0.54), COLORS.violet, 0.13],
-		[new THREE.Vector3(1.24, -0.72, 0.62), COLORS.cyan, 0.1],
-		[new THREE.Vector3(-1.2, 1.18, -0.76), COLORS.cyan, 0.08],
+		[new THREE.Vector3(-1.7, -0.12, 0.82), COLORS.green, 0.15],
+		[new THREE.Vector3(1.48, 0.62, -0.54), COLORS.violet, 0.17],
+		[new THREE.Vector3(1.24, -0.72, 0.62), COLORS.cyan, 0.13],
+		[new THREE.Vector3(-1.2, 1.18, -0.76), COLORS.cyan, 0.11],
 	];
 	nodes.forEach(([position, color, size], index) => {
 		const node = addGlowNode(graph, root, position, color, size, index === 1 ? 1.18 : 0.85);
@@ -1104,7 +1133,7 @@ function createSceneGraph(kind, scene, small) {
 	graph.userData.flows = [];
 	graph.userData.dynamicMaterials = [];
 	scene.add(graph);
-	addBackdrop(graph, scene, small, kind === 'lab' ? 'galaxy' : kind === 'hub' ? 'galaxy' : 'deep');
+	addBackdrop(graph, scene, small, kind);
 	switch (kind) {
 		case 'career':
 			buildCareer(graph, small);
@@ -1156,7 +1185,10 @@ function mountScene(canvas, kind) {
 	const scene = new THREE.Scene();
 	scene.fog = new THREE.FogExp2(0x020a12, small ? 0.018 : 0.014);
 	const camera = new THREE.PerspectiveCamera(kind === 'career' ? 38 : 35, 1, 0.1, 100);
-	camera.position.set(0, 0.08, kind === 'lab' ? 8.8 : kind === 'vault' ? 8.2 : 7.8);
+	const cameraDistance = small
+		? (kind === 'lab' ? 8.8 : kind === 'vault' ? 8.2 : 7.8)
+		: (kind === 'lab' ? 8.05 : kind === 'vault' ? 7.65 : kind === 'career' || kind === 'projects' ? 7.25 : 7.35);
+	camera.position.set(0, 0.08, cameraDistance);
 	camera.lookAt(0, 0, 0);
 	const renderer = new THREE.WebGLRenderer({
 		canvas,
