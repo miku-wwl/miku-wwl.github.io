@@ -12,6 +12,14 @@ import { SITE_TITLE } from '../consts';
 		</a>
 
 		<MvpBadge variant="inline" />
+
+		<nav class="module-nav" aria-label="Portfolio modules">
+			<a class="module-nav-link is-active" href="https://miku-wwl.github.io/" aria-current="page">hub</a>
+			<a class="module-nav-link" href="https://miku-wwl.github.io/career-journey/">career</a>
+			<a class="module-nav-link" href="https://miku-wwl.github.io/engineering-projects/">projects</a>
+			<a class="module-nav-link" href="https://miku-wwl.github.io/certification-vault/">certs</a>
+			<a class="module-nav-link" href="https://miku-wwl.github.io/engineering-lab/">lab</a>
+		</nav>
 	</div>
 </header>
 
@@ -37,6 +45,7 @@ import { SITE_TITLE } from '../consts';
 	.bar {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 1rem;
 		max-width: var(--max-page);
 		margin: 0 auto;
@@ -55,8 +64,40 @@ import { SITE_TITLE } from '../consts';
 	.brand-prompt { color: var(--accent); }
 	.brand-sep { color: var(--prompt); }
 	.brand-name { color: var(--text); font-weight: 700; }
+	.module-nav {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-left: auto;
+		max-width: 100%;
+		overflow-x: auto;
+		padding: 0.15rem;
+		scrollbar-width: none;
+	}
+	.module-nav::-webkit-scrollbar { display: none; }
+	.module-nav-link {
+		flex: 0 0 auto;
+		padding: 0.42rem 0.62rem;
+		border: 1px solid transparent;
+		border-radius: 0.45rem;
+		color: var(--text-muted);
+		font: 0.68rem var(--font-mono);
+		letter-spacing: 0.06em;
+		text-decoration: none;
+		text-transform: uppercase;
+		transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+	}
+	.module-nav-link:hover,
+	.module-nav-link.is-active {
+		border-color: var(--border);
+		background: var(--surface-2);
+		color: var(--text);
+	}
+	.module-nav-link.is-active::before { content: '› '; color: var(--accent); }
 
 	@media (max-width: 480px) {
+		.bar { gap: 0.55rem; }
 		.brand-prompt { display: none; }
+		.module-nav { width: 100%; margin-left: 0; order: 3; }
 	}
 </style>
