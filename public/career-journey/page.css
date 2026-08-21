@@ -1,0 +1,20 @@
+.page-main { padding-top: 1.4rem; }
+.career-hero { margin-bottom: 1.4rem; }
+.career-hero .hero-copy h1 { white-space: nowrap; font-size: clamp(2rem, 2.6vw, 2.75rem); letter-spacing: -0.06em; }
+.career-visual { position: relative; height: 330px; min-height: 330px; }
+.career-visual .scene-label { position: absolute; z-index: 4; color: var(--cyan); font: 0.58rem var(--mono); letter-spacing: 0.08em; pointer-events: none; }
+.career-visual .systems { left: 8%; bottom: 18%; }
+.career-visual .reliability { right: 12%; top: 15%; color: var(--green); }
+.career-visual .innovation { right: 8%; bottom: 26%; color: var(--violet); }
+.window-state { margin-left: auto; color: var(--green); font-size: 0.62rem; letter-spacing: 0.08em; }
+.career-window { box-shadow: var(--glow-green); }
+.timeline-card { position: relative; overflow: hidden; }
+.timeline-card::after { position: absolute; inset: 0 0 auto; height: 2px; content: ''; background: var(--green); opacity: 0.65; }
+.timeline-card.cyan-node::after { background: var(--cyan); }
+.timeline-card .tag-list { margin-top: 0.9rem; }
+.education-window { margin-top: 1rem; }
+.education li { align-items: center; }
+.education-mark { flex: 0 0 auto; color: var(--green); }
+.education-time { flex: 0 0 auto; color: var(--cyan); white-space: nowrap; }
+@media (max-width: 1000px) { .career-visual { height: 300px; min-height: 300px; } }
+@media (max-width: 720px) { .career-visual { height: 255px; min-height: 255px; } .education-time { display: block; margin-top: 0.35rem; margin-left: 1.35rem; } }

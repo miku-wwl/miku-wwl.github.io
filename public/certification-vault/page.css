@@ -1,0 +1,32 @@
+.page-main { padding-top: 1.4rem; }
+.vault-hero { margin-bottom: 1.4rem; }
+.vault-visual { position: relative; height: 330px; min-height: 330px; }
+.scene-label { position: absolute; z-index: 4; color: var(--violet); font: 0.58rem var(--mono); letter-spacing: 0.08em; pointer-events: none; }
+.scene-label-top { top: 0.8rem; left: 1rem; }
+.scene-label-bottom { right: 1rem; bottom: 0.8rem; color: var(--text-faint); }
+.violet-text { color: var(--violet) !important; }
+.window-state { margin-left: auto; color: var(--violet); font-size: 0.62rem; letter-spacing: 0.08em; }
+.vault-window { box-shadow: 0 0 0 1px rgba(179, 109, 255, 0.14), var(--shadow); }
+.vault-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+.credential { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 0.8rem; min-height: 92px; padding: 0.72rem; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(5, 18, 29, 0.78); color: var(--text); text-decoration: none; transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+.credential:hover { color: var(--text); text-decoration: none; transform: translateY(-3px); }
+.credential-gold { border-color: rgba(241, 183, 76, 0.5); background: linear-gradient(110deg, var(--amber-soft), rgba(5, 18, 29, 0.82) 58%); }
+.credential-gold:hover { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 14px 30px var(--amber-soft); }
+.credential-gold strong { color: var(--amber); }
+.credential img { width: 58px; height: 58px; object-fit: contain; border-radius: 9px; background: var(--surface-2); }
+.credential strong, .learning-track strong { display: block; line-height: 1.3; font-family: var(--mono); font-size: 0.78rem; }
+.issuer { display: block; margin-top: 0.28rem; color: var(--muted); font: 0.65rem var(--mono); }
+.credential-arrow { color: var(--violet); font: 700 1.2rem var(--mono); }
+.credential-gold .credential-arrow { color: var(--amber); }
+.featured-record { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; padding: 0.8rem 0.95rem; border: 1px solid rgba(40, 240, 160, 0.5); border-radius: var(--radius); background: linear-gradient(90deg, var(--green-soft), rgba(7, 20, 32, 0.7)); color: var(--text); text-decoration: none; }
+.featured-record:hover { color: var(--text); text-decoration: none; border-color: var(--green); box-shadow: var(--glow-green); }
+.award-mark { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--green); border-radius: 50%; color: var(--green); font-size: 1.1rem; }
+.featured-record strong { display: block; color: var(--green); font-family: var(--mono); }
+.learning-track { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; margin-top: 0.75rem; padding: 0.8rem 0.95rem; border: 1px dashed rgba(241, 183, 76, 0.5); border-radius: var(--radius); background: var(--amber-soft); color: var(--text); text-decoration: none; }
+.learning-track:hover { color: var(--text); text-decoration: none; border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
+.track-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--amber); border-radius: 50%; color: var(--amber); font: 1rem var(--mono); }
+.track-label { display: block; margin-bottom: 0.25rem; color: var(--amber); font: 0.6rem var(--mono); letter-spacing: 0.08em; }
+.learning-track .credential-arrow { color: var(--amber); }
+@media (max-width: 1000px) { .vault-visual { height: 300px; min-height: 300px; } }
+@media (max-width: 720px) { .vault-visual { height: 255px; min-height: 255px; } .vault-grid { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .credential { grid-template-columns: 50px minmax(0, 1fr) auto; } .credential img { width: 50px; height: 50px; } .credential strong, .learning-track strong { font-size: 0.7rem; } }

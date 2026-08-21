@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Selected engineering projects by Weilai Wang.">
+  <title>Engineering Projects · Weilai Wang</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./site.css">
+  <link rel="stylesheet" href="./page.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell header-inner">
+      <a class="brand" href="https://miku-wwl.github.io/" aria-label="Back to Weilai Wang's main hub"><span>~/miku-wwl</span> / engineering-projects</a>
+      <div class="trust-marks" aria-label="Professional and national marks">
+        <a class="trust-mark" href="/certification-vault/" aria-label="HashiCorp Certified Terraform Authoring and Operations Professional" title="Terraform Professional"><img src="/certifications/terraform-authoring-operations-professional.png" alt="Terraform Professional" loading="eager" decoding="async"></a>
+        <a class="trust-mark" href="/certification-vault/" aria-label="Microsoft Certified Azure Solutions Architect Expert" title="Azure Solutions Architect Expert"><img src="/certifications/azure-solutions-architect-expert.png" alt="Azure Solutions Architect Expert" loading="eager" decoding="async"></a>
+        <a class="trust-mark" href="/certification-vault/" aria-label="AWS Certified Solutions Architect Professional" title="AWS Solutions Architect Professional"><img src="/certifications/aws-solutions-architect-professional.png" alt="AWS Solutions Architect Professional" loading="eager" decoding="async"></a>
+        <a class="trust-mark" href="/certification-vault/" aria-label="Certified Kubernetes Application Developer" title="Certified Kubernetes Application Developer"><img src="/certifications/ckad.png" alt="Certified Kubernetes Application Developer" loading="eager" decoding="async"></a>
+        <span class="trust-mark trust-mark-kiwi" role="img" aria-label="Kiwi bird mark" title="Kiwi bird">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.1 15.6c1.5-2.4 4-3.9 6.9-4.2 2.8-.2 5.1.6 6.7 2.2l2.4-2 3.6-3.2c.4-.4 1 .1.7.6l-2.5 4.4-1.7 1.9c-.6 2.5-2.7 4.4-5.6 5-3.4.7-7.4-.4-9.6-2.8-.7-.7-1.1-1.4-.9-1.9Z" fill="currentColor"></path>
+            <path d="M6.1 15.4c1.5-1 3.1-1.3 4.8-.8-1.1.8-1.6 1.8-1.4 3.1-1.4-.6-2.5-1.3-3.4-2.3Z" fill="var(--bg)" opacity=".28"></path>
+            <path d="M17.1 14.1 22 8.8" fill="none" stroke="#f3b84b" stroke-linecap="round" stroke-width="1.2"></path>
+            <path d="M6.3 19.4 5.7 22M10.2 20 10 22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.1"></path>
+            <circle cx="14.2" cy="14" r=".8" fill="var(--bg)"></circle>
+          </svg>
+        </span>
+        <span class="trust-mark trust-mark-star" role="img" aria-label="Australian Commonwealth Star" title="Australian Commonwealth Star">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,3 13.65,8.58 19.04,6.39 15.71,11.15 20.75,14 14.96,14.36 15.91,20.11 12,15.8 8.09,20.11 9.04,14.36 3.25,14 8.29,11.15 4.96,6.39 10.35,8.58" fill="currentColor"></polygon></svg>
+        </span>
+      </div>
+      <nav class="module-nav" aria-label="Portfolio modules">
+        <a class="module-nav-link" href="https://miku-wwl.github.io/">hub</a>
+        <a class="module-nav-link" href="https://miku-wwl.github.io/career-journey/">career</a>
+        <a class="module-nav-link is-active" href="https://miku-wwl.github.io/engineering-projects/" aria-current="page">projects</a>
+        <a class="module-nav-link" href="https://miku-wwl.github.io/certification-vault/">certs</a>
+        <a class="module-nav-link" href="https://miku-wwl.github.io/engineering-lab/">lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <aside class="module-rail" aria-label="Portfolio module navigation">
+    <span class="module-rail-tab" aria-hidden="true">≡</span>
+    <p class="module-rail-kicker">MODULES</p>
+    <a class="module-rail-link" href="https://miku-wwl.github.io/"><span>01</span><strong>HUB</strong></a>
+    <a class="module-rail-link" href="https://miku-wwl.github.io/career-journey/"><span>02</span><strong>CAREER</strong></a>
+    <a class="module-rail-link is-active" href="https://miku-wwl.github.io/engineering-projects/" aria-current="page"><span>03</span><strong>PROJECTS</strong></a>
+    <a class="module-rail-link" href="https://miku-wwl.github.io/certification-vault/"><span>04</span><strong>CERTS</strong></a>
+    <a class="module-rail-link" href="https://miku-wwl.github.io/engineering-lab/"><span>05</span><strong>LAB</strong></a>
+  </aside>
+
+  <main class="site-shell page-main">
+    <section class="hero projects-hero">
+      <div class="project-visual"><span class="scene-label scene-label-top">TOPOLOGY / CONTROL PLANE</span><span class="scene-label scene-label-bottom">TOPOLOGY NODE 02</span></div>
+      <div class="hero-copy"><p class="eyebrow">~/engineering-projects $ ls -1</p><h1>Engineering Projects</h1><p class="lede">Selected work across backend platforms, cloud governance, Kubernetes operations, and the engineering controls that make systems dependable.</p><div class="hero-subline"><span class="chip green"><span class="chip-dot"></span>active systems</span><span class="chip cyan">platform engineering</span><span class="chip violet">SRE studies</span></div></div>
+      <aside class="hud-panel" aria-label="Projects status"><p class="hud-title">// PROJECT HUD</p><div class="hud-row"><span>route</span><strong>/engineering-projects/</strong></div><div class="hud-row"><span>signal</span><strong class="live"><span class="status-dot" aria-hidden="true"></span> ONLINE</strong></div><div class="hud-row"><span>active</span><strong class="green-text">01 node</strong></div><div class="hud-row"><span>planned</span><strong class="violet-text">01 node</strong></div><div class="hud-time mono"><span>local time</span><strong data-live-time>--:--:--</strong></div></aside>
+    </section>
+
+    <section class="window project-shell" aria-labelledby="projects-title">
+      <div class="window-bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>projects/control-plane</span><span class="window-state">INDEXED 02</span></div>
+      <div class="window-body">
+        <div class="section-heading"><div><p class="eyebrow">/project-nodes</p><h2 id="projects-title">Active and planned systems</h2></div><div class="filter-bar" role="group" aria-label="Filter projects"><button class="filter-button is-active" type="button" data-filter="all">ALL</button><button class="filter-button" type="button" data-filter="active">ACTIVE</button><button class="filter-button" type="button" data-filter="planned">PLANNED</button></div></div>
+        <div class="project-grid">
+          <article class="project-card active-card" data-project-card data-status="active"><div class="project-card-top"><p class="status">active development</p><span class="node-id">NODE_01</span></div><h3>Cloud Governance X</h3><p class="project-summary">A cloud governance and FinOps platform for resource inventory, cost visibility, ETL execution tracking, and production-oriented backend engineering.</p><p class="stack">.NET 10 · PostgreSQL · Terraform · GitHub Actions · Docker · Azure SDK</p><ul><li>Implemented a .NET 10 backend foundation using Clean Architecture-style boundaries across API, Application, Domain, Infrastructure, Worker, Migrator, and automated test projects.</li><li>Built Azure resource inventory and cost ingestion foundations using Azure SDK, Azure Resource Graph, Azure Cost Management Query API, PostgreSQL repositories, and ETL job tracking.</li><li>Designed PostgreSQL persistence for cloud resources, daily cost records, ETL job runs, provider accounts, tenant-aware data access, and governance metadata.</li><li>Established quality controls including architecture boundary tests, repository static checks, migration verification, GitHub Actions CI, and Terraform validation.</li></ul><div class="tag-list"><span class="tag green">.NET 10</span><span class="tag green">Azure</span><span class="tag cyan">PostgreSQL</span><span class="tag cyan">Terraform</span></div></article>
+          <article class="project-card planned-card" data-project-card data-status="planned"><div class="project-card-top"><p class="status planned">planned research</p><span class="node-id">NODE_02</span></div><h3>Cross-Cloud Kubernetes Node Lifecycle and SRE Failure Modeling Lab</h3><p class="project-summary">A production-inspired AKS/EKS reliability lab focused on Kubernetes node lifecycle management, immutable infrastructure, rollout governance, drift detection, and SRE failure modeling.</p><p class="stack">Packer · Terraform · AKS · EKS · GitHub Actions · Go · Trivy · Prometheus · Grafana</p><ul><li>Plan EKS custom AMI lifecycle with Packer, Launch Templates, Managed Node Groups, Trivy scanning, Goss validation, pinned image versions, and rollback paths.</li><li>Study supported AKS node image governance, node pool upgrades, custom node configuration, DaemonSet baseline checks, drift detection, and Azure Monitor observability.</li><li>Model image release failures, CIS hardening side effects, Terraform CI state drift, CNI/runtime failures, resource exhaustion, DNS/network partitions, and version drift.</li><li>Validate recovery with Azure Chaos Studio, Chaos Mesh, Prometheus/Grafana signals, RCA reports, recovery playbooks, and preventive controls.</li></ul><div class="tag-list"><span class="tag violet">AKS / EKS</span><span class="tag violet">Chaos</span><span class="tag cyan">Prometheus</span><span class="tag amber">Packer</span></div></article>
+        </div>
+        <div class="project-console"><span class="prompt-glyph" aria-hidden="true">❯</span><span class="mono">filter --status <strong data-filter-status>all</strong></span><span class="console-note">select a control-plane filter to inspect nodes</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="site-shell footer-inner"><p>❯ echo "project index ready"</p><p>Aggregated GitHub Pages module · <a href="https://github.com/miku-wwl/miku-wwl.github.io/tree/main/public/engineering-projects">source</a></p></div></footer>
+  <script src="./site.js"></script>
+</body>
+</html>
