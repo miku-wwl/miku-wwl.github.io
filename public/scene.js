@@ -208,19 +208,19 @@ function planetMaterial(graph, options = {}) {
 			'void main() {',
 			'  vec3 normal = normalize(vPlanetPosition);',
 			'  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);',
-			'  float cloudField = fbm(normal * 3.0 + vec3(0.0, uTime * 0.004, 0.0));',
-			'  float surfaceVariation = noise3(normal * 12.0 - vec3(uTime * 0.004, 0.0, uTime * 0.002));',
+			'  float cloudField = fbm(normal * 4.0 + vec3(0.0, uTime * 0.004, 0.0));',
+			'  float surfaceVariation = noise3(normal * 18.0 - vec3(uTime * 0.004, 0.0, uTime * 0.002));',
 			'  float light = max(dot(normal, normalize(vec3(-0.45, 0.62, 0.92))), 0.0);',
-			'  vec3 oceanColor = mix(uOcean, uOceanLight, 0.22 + cloudField * 0.26);',
-			'  vec3 color = oceanColor + uLandShadow * surfaceVariation * 0.08;',
-			'  float surfaceDots = smoothstep(0.925, 0.995, hash13(floor(normal * 42.0) + vec3(7.0, 13.0, 5.0)));',
-			'  float fineDots = smoothstep(0.965, 0.999, hash13(floor(normal * 82.0) + vec3(2.0, 19.0, 11.0)));',
+			'  vec3 oceanColor = mix(uOcean, uOceanLight, 0.34 + cloudField * 0.18);',
+			'  vec3 color = oceanColor + uLandShadow * (surfaceVariation - 0.5) * 0.045;',
+			'  float surfaceDots = smoothstep(0.93, 0.995, hash13(floor(normal * 64.0) + vec3(7.0, 13.0, 5.0)));',
+			'  float fineDots = smoothstep(0.97, 0.999, hash13(floor(normal * 118.0) + vec3(2.0, 19.0, 11.0)));',
 			'  float facing = max(dot(normalize(vPlanetNormal), viewDirection), 0.0);',
 			'  float rim = pow(1.0 - facing, 2.6);',
 			'  float nightLights = surfaceDots * (1.0 - light) * 0.72;',
 			'  float specular = pow(max(dot(reflect(-viewDirection, normal), normalize(vec3(-0.45, 0.62, 0.92))), 0.0), 26.0);',
 			'  color *= 0.72 + light * 0.44;',
-			'  color += uLand * (surfaceDots * 0.62 + fineDots * 0.42 + nightLights);',
+			'  color += uLand * (surfaceDots * 0.7 + fineDots * 0.46 + nightLights * 0.7);',
 			'  color += uOceanLight * specular * 0.38 + uLand * rim * 0.18;',
 			'  gl_FragColor = vec4(color, uOpacity);',
 			'}',
@@ -399,9 +399,10 @@ function addParticleSet(graph, parent, positions, colors, sizes, twinkles, opaci
 	return points;
 }
 
-function addStarField(graph, scene, small, seed = 19, mode = 'deep') {
+function addStarField(graph, scene, small, seed = 19, mode = 'deep', density = 1) {
 	const random = seededRandom(seed);
-	const count = small ? 420 : mode === 'galaxy' ? 2500 : 1600;
+	const baseCount = small ? 340 : mode === 'galaxy' ? 1800 : 1150;
+	const count = Math.max(80, Math.round(baseCount * density));
 	const positions = [];
 	const colors = [];
 	const sizes = [];
@@ -424,7 +425,7 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep') {
 		const normalY = seededNormal(random);
 		const normalZ = seededNormal(random);
 
-		if (mode === 'galaxy' && random() < 0.78) {
+		if (mode === 'galaxy' && random() < 0.64) {
 			// Four noisy spiral arms: dense near the core, stretched into a
 			// shallow disk so the field reads as a galaxy behind the scene.
 			const armIndex = Math.floor(random() * 4);
@@ -451,22 +452,22 @@ function addStarField(graph, scene, small, seed = 19, mode = 'deep') {
 				: colorRoll < 0.9
 					? palette[2]
 					: palette[3];
-		const intensity = 0.76 + Math.pow(random(), 2.8) * 0.76;
+		const intensity = 0.68 + Math.pow(random(), 3.0) * 0.66;
 		colors.push(color.r * intensity, color.g * intensity, color.b * intensity);
-		const size = 0.1 + Math.pow(random(), 4.8) * (mode === 'galaxy' ? 3.25 : 2.5);
+		const size = 0.075 + Math.pow(random(), 5.0) * (mode === 'galaxy' ? 2.7 : 1.95);
 		const twinkle = random();
 		sizes.push(size);
 		twinkles.push(twinkle);
-		if (!small && size > 0.72) {
+		if (!small && size > 0.78) {
 			haloPositions.push(x, y, z);
 			haloColors.push(color.r * intensity, color.g * intensity, color.b * intensity);
-			haloSizes.push(size * 2.25);
+			haloSizes.push(size * 2.05);
 			haloTwinkles.push(twinkle);
 		}
 	}
-	const points = addParticleSet(graph, scene, positions, colors, sizes, twinkles, mode === 'galaxy' ? 0.86 : 0.72);
+	const points = addParticleSet(graph, scene, positions, colors, sizes, twinkles, mode === 'galaxy' ? 0.8 : 0.67);
 	if (haloPositions.length > 0) {
-		addParticleSet(graph, scene, haloPositions, haloColors, haloSizes, haloTwinkles, mode === 'galaxy' ? 0.13 : 0.1);
+		addParticleSet(graph, scene, haloPositions, haloColors, haloSizes, haloTwinkles, mode === 'galaxy' ? 0.1 : 0.07);
 	}
 	return points;
 }
@@ -529,9 +530,8 @@ function addGridFloor(graph, scene, color = COLORS.cyan, y = -1.45, z = -0.4, op
 }
 
 function addBackdrop(graph, scene, small, mode = 'deep') {
-	addStarField(graph, scene, small, mode === 'galaxy' ? 71 : 19, mode);
-	if (!small && mode === 'galaxy') addStarField(graph, scene, false, 113, 'deep');
-	if (!small && mode !== 'galaxy') addStarField(graph, scene, false, 113, 'deep');
+	addStarField(graph, scene, small, mode === 'galaxy' ? 71 : 19, mode, mode === 'galaxy' ? 1 : 0.9);
+	if (!small) addStarField(graph, scene, false, 113, 'deep', mode === 'galaxy' ? 0.6 : 0.72);
 	const nebulaMaterial = registerMaterial(graph, new THREE.ShaderMaterial({
 		uniforms: {
 			uPrimary: { value: new THREE.Color(mode === 'galaxy' ? COLORS.cyan : COLORS.violet) },
@@ -716,28 +716,28 @@ function buildHub(graph, small) {
 	root.scale.setScalar(small ? 0.9 : 1.18);
 	root.position.set(0.05, 0.04, 0.18);
 	graph.add(root);
-	addGridFloor(graph, root, COLORS.cyan, -1.42, -0.82, 0.11);
+	addGridFloor(graph, root, COLORS.cyan, -1.42, -0.82, 0.085);
 
 	const globe = new THREE.Group();
 	root.add(globe);
 	addPlanet(graph, globe, {
 		radius: 0.62,
-		ocean: 0x08475a,
-		oceanLight: 0x11d8c2,
+		ocean: 0x095266,
+		oceanLight: 0x16d2c8,
 		land: 0x20f6a7,
 		landShadow: 0x087454,
-		atmosphereColor: 0x20f6a7,
-		atmosphereOpacity: 0.42,
+		atmosphereColor: 0x20e8ce,
+		atmosphereOpacity: 0.32,
 		emblem: 'W',
 		emblemColor: 0x83ffe0,
 		label: 'hub planet',
 	});
 
 	const orbitSpecs = [
-		{ radius: 1.03, yScale: 0.35, depth: 0.18, tilt: 0.28, yaw: -0.18, color: COLORS.green, opacity: 0.72 },
-		{ radius: 1.34, yScale: 0.3, depth: 0.26, tilt: -0.35, yaw: 0.2, color: COLORS.cyan, opacity: 0.62 },
-		{ radius: 1.66, yScale: 0.24, depth: 0.32, tilt: 0.58, yaw: -0.38, color: COLORS.violet, opacity: 0.48 },
-		{ radius: 1.9, yScale: 0.18, depth: 0.38, tilt: -0.1, yaw: 0.48, color: COLORS.green, opacity: 0.34 },
+		{ radius: 1.03, yScale: 0.35, depth: 0.18, tilt: 0.28, yaw: -0.18, color: COLORS.green, opacity: 0.62, thickness: 0.009 },
+		{ radius: 1.34, yScale: 0.3, depth: 0.26, tilt: -0.35, yaw: 0.2, color: COLORS.cyan, opacity: 0.54, thickness: 0.009 },
+		{ radius: 1.66, yScale: 0.24, depth: 0.32, tilt: 0.58, yaw: -0.38, color: COLORS.violet, opacity: 0.42, thickness: 0.008 },
+		{ radius: 1.9, yScale: 0.18, depth: 0.38, tilt: -0.1, yaw: 0.48, color: COLORS.green, opacity: 0.3, thickness: 0.007 },
 	];
 	const orbits = orbitSpecs.map((options) => addOrbit(graph, root, options));
 	const nodes = [
