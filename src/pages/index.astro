@@ -58,6 +58,15 @@ const modules = [
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
+		<div class="hub-splash" aria-hidden="true">
+			<div class="hub-splash-panel hub-splash-panel-left"></div>
+			<div class="hub-splash-panel hub-splash-panel-right"></div>
+			<div class="hub-splash-copy">
+				<p class="hub-splash-kicker mono">~/miku-wwl $ boot --hub</p>
+				<strong>PORTAL ONLINE</strong>
+				<span class="hub-splash-status mono"><span class="status-dot"></span> opening interface</span>
+			</div>
+		</div>
 		<div class="hub-page-background" aria-hidden="true"></div>
 		<Header />
 		<aside class="module-rail" aria-label="Portfolio module navigation">
@@ -133,6 +142,21 @@ const modules = [
 
 <style>
 	:global(body) { position: relative; }
+	.hub-splash { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; animation: hub-splash-dismiss 320ms ease 2.55s forwards; }
+	.hub-splash-panel { position: relative; min-width: 0; background: radial-gradient(circle at center, rgba(12, 52, 70, 0.42), transparent 48%), linear-gradient(145deg, #06131f, #02080e 72%); }
+	.hub-splash-panel::after { position: absolute; top: 0; bottom: 0; width: 1px; content: ''; background: linear-gradient(transparent, var(--prompt), transparent); opacity: 0.75; }
+	.hub-splash-panel-left { transform-origin: left center; border-right: 1px solid rgba(40, 240, 160, 0.24); animation: hub-splash-open-left 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.2s forwards; }
+	.hub-splash-panel-left::after { right: 0; }
+	.hub-splash-panel-right { transform-origin: right center; border-left: 1px solid rgba(40, 240, 160, 0.24); animation: hub-splash-open-right 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.2s forwards; }
+	.hub-splash-panel-right::after { left: 0; }
+	.hub-splash-copy { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 0.45rem; color: var(--text); text-align: center; animation: hub-splash-copy-exit 420ms ease 0.95s forwards; }
+	.hub-splash-kicker { margin: 0; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+	.hub-splash-copy strong { color: var(--prompt); font: 700 clamp(1.35rem, 3vw, 2.5rem) var(--font-mono); letter-spacing: 0.12em; }
+	.hub-splash-status { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--text-muted); font-size: 0.68rem; letter-spacing: 0.08em; }
+	@keyframes hub-splash-open-left { to { transform: translateX(-100%); } }
+	@keyframes hub-splash-open-right { to { transform: translateX(100%); } }
+	@keyframes hub-splash-copy-exit { to { opacity: 0; transform: scale(0.96); } }
+	@keyframes hub-splash-dismiss { to { visibility: hidden; opacity: 0; } }
 	.hub-page-background { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: url('/images/portfolio-backgrounds/01-main-hub-bg.png') center top / cover no-repeat; }
 	:global(body > header), :global(body > main), :global(body > footer) { position: relative; z-index: 1; }
 	.module-rail { --rail-accent: var(--prompt); position: fixed; top: 50%; left: 0; z-index: 20; display: grid; width: 8.2rem; gap: 0.25rem; padding: 0.55rem; transform: translate(calc(-100% + 0.72rem), -50%); border: 1px solid color-mix(in srgb, var(--rail-accent) 42%, var(--border)); border-radius: 0 var(--radius) var(--radius) 0; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: var(--shadow-2); backdrop-filter: blur(16px) saturate(130%); transition: transform 180ms ease; }
@@ -152,10 +176,18 @@ const modules = [
 	.hub-tagline { max-width: 42ch; margin: 0 0 1rem; color: var(--prompt); font-size: 0.84rem; line-height: 1.55; }
 	.hub-bio { max-width: 46ch; margin: 0; color: var(--text-muted); font-size: 0.93rem; }
 	.hub-signal { display: flex; align-items: center; gap: 0.55rem; margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.68rem; }
+	.status-dot { display: inline-block; flex: 0 0 auto; width: 0.42rem; height: 0.42rem; border-radius: 50%; background: var(--prompt); box-shadow: 0 0 10px color-mix(in srgb, var(--prompt) 75%, transparent); }
 	.hub-visual { position: relative; height: 370px; }
 	.scene-label { position: absolute; z-index: 4; color: var(--cyan); font: 0.62rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; }
 	.scene-label-top { top: 0.75rem; left: 1rem; }
 	.scene-label-bottom { right: 1rem; bottom: 0.75rem; color: var(--text-faint); }
+	.hud-panel { min-width: 0; align-self: center; padding: 1.05rem 1rem 0.9rem; border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border)); border-radius: var(--radius-lg); background: linear-gradient(155deg, color-mix(in srgb, var(--surface-2) 92%, transparent), color-mix(in srgb, var(--surface) 78%, transparent)); box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.04); backdrop-filter: blur(14px) saturate(125%); }
+	.hud-title { margin: 0 0 0.7rem; color: var(--text); font: 600 0.78rem var(--font-mono); letter-spacing: 0.08em; }
+	.hud-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; padding: 0.58rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
+	.hud-row > span { min-width: 0; color: var(--text-muted); font: 0.65rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+	.hud-row > strong { min-width: 0; color: var(--text); font: 600 0.72rem var(--font-mono); text-align: right; overflow-wrap: anywhere; }
+	.hud-row > strong.live { display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.38rem; color: var(--prompt); }
+	.hud-row > strong.cyan { color: var(--accent); }
 	.hub-hud { align-self: center; }
 	.hud-time { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.6rem; padding-top: 0.65rem; border-top: 1px dashed var(--border); color: var(--text-faint); font-size: 0.66rem; }
 	.hud-time strong { color: var(--text-muted); font-weight: 500; }
@@ -196,6 +228,6 @@ const modules = [
 	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
 	.legacy-links span { color: var(--accent); }
 	@media (max-width: 1100px) { .module-rail { top: 4.6rem; left: 50%; width: min(1380px, calc(100% - 2rem)); margin: 0; transform: translate(-50%, calc(-100% + 0.72rem)); grid-template-columns: auto repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 0 0 var(--radius) var(--radius); } .module-rail:hover, .module-rail:focus-within { transform: translate(-50%, 0); } .module-rail-tab { top: auto; right: 50%; bottom: 0; width: 3.2rem; height: 0.72rem; transform: translateX(50%); border-top: 1px solid color-mix(in srgb, var(--rail-accent) 42%, var(--border)); border-left: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); } .module-rail-kicker { margin: 0; border-bottom: 0; } .module-rail-link { justify-content: center; } .hub-hero { grid-template-columns: minmax(230px, 0.85fr) minmax(330px, 1.15fr); } .hub-hud { grid-column: 1 / -1; } .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 680px) { .hub-page-background { background-size: auto 100%; background-position: 58% top; } .module-rail { width: calc(100% - 1rem); display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.4rem; } .module-rail-kicker { flex: 0 0 auto; padding: 0.4rem 0.35rem; } .module-rail-link { flex: 0 0 auto; justify-content: flex-start; } .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual { height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
-	@media (prefers-reduced-motion: reduce) { .module-rail, .module-card, .module-arrow, .module-glow { transition: none; } }
+	@media (max-width: 680px) { .hub-page-background { background-size: auto 100%; background-position: 58% top; } .module-rail { width: calc(100% - 1rem); display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.4rem; } .module-rail-kicker { flex: 0 0 auto; padding: 0.4rem 0.35rem; } .module-rail-link { flex: 0 0 auto; justify-content: flex-start; } .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual { height: 290px; } .hub-hud { grid-column: auto; } .hud-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); } .hud-row > strong { text-align: right; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
+	@media (prefers-reduced-motion: reduce) { .hub-splash { display: none; } .module-rail, .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>
