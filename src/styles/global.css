@@ -1,6 +1,6 @@
 /*
   Global styles — terminal / TUI aesthetic.
-  Dark "terminal" theme is the default; light "paper" theme via [data-theme="light"].
+  Forced dark "terminal" theme.
 */
 
 :root,
@@ -43,33 +43,7 @@
 	background: var(--bg);
 }
 
-:root[data-theme='light'] {
-	color-scheme: light;
-	--bg: #fafafa;
-	--bg-elev: #ffffff;
-	--surface: #ffffff;
-	--surface-2: #f4f6fa;
-	--border: #d0d7de;
-	--border-strong: #b6becc;
-	--text: #1f2328;
-	--text-muted: #57606a;
-	--text-faint: #6e7781;
-	--prompt: #1a7f37;
-	--accent: #0969da;
-	--accent-soft: rgba(9, 105, 218, 0.12);
-	--magenta: #8250df;
-	--yellow: #9a6700;
-	--orange: #bc4c00;
-	--award: #1a7f37;
-	--award-soft: rgba(26, 127, 55, 0.12);
-	--selection: rgba(26, 127, 55, 0.22);
-	--shadow-1: 0 1px 0 rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.08);
-	--shadow-2: 0 2px 0 rgba(15, 23, 42, 0.05), 0 18px 36px rgba(15, 23, 42, 0.12);
-	--glow: 0 0 0 1px rgba(9, 105, 218, 0.22), 0 0 24px rgba(9, 105, 218, 0.15);
-	--ring: 0 0 0 2px rgba(26, 127, 55, 0.45);
-}
-
-/* No-FOUC: respected via inline script in BaseHead */
+/* Theme is intentionally fixed to night mode. */
 
 *,
 *::before,
@@ -204,12 +178,7 @@ pre > code {
 pre.astro-code {
 	background: var(--surface) !important;
 }
-:root[data-theme='light'] pre.astro-code,
-:root[data-theme='light'] pre.astro-code span {
-	color: inherit;
-}
-
-/* Show the right Shiki theme per mode */
+/* Use the dark Shiki theme. */
 :root[data-theme='dark'] .astro-code,
 :root[data-theme='dark'] .astro-code span {
 	color: var(--shiki-dark, inherit) !important;
