@@ -59,6 +59,10 @@ const modules = [
 	</head>
 	<body>
 		<div class="hub-splash" aria-hidden="true">
+			<video class="hub-splash-video" autoplay muted playsinline preload="auto">
+				<source src="/videos/openvideo.mp4" type="video/mp4" />
+			</video>
+			<div class="hub-splash-shade"></div>
 			<div class="hub-splash-panel hub-splash-panel-left"></div>
 			<div class="hub-splash-panel hub-splash-panel-right"></div>
 			<div class="hub-splash-copy">
@@ -67,6 +71,30 @@ const modules = [
 				<span class="hub-splash-status mono"><span class="status-dot"></span> opening interface</span>
 			</div>
 		</div>
+		<script is:inline>
+			(() => {
+				const splash = document.querySelector('.hub-splash');
+				const video = splash?.querySelector('.hub-splash-video');
+				if (!splash || !video) return;
+
+				let revealed = false;
+				const reveal = () => {
+					if (revealed) return;
+					revealed = true;
+					video.pause();
+					splash.classList.add('is-opening');
+				};
+
+				video.addEventListener('timeupdate', () => {
+					if (video.currentTime >= 5) reveal();
+				});
+				video.addEventListener('ended', reveal, { once: true });
+				video.addEventListener('error', reveal, { once: true });
+				window.setTimeout(reveal, 5600);
+				const playback = video.play();
+				if (playback?.catch) playback.catch(reveal);
+			})();
+		</script>
 		<div class="hub-page-background" aria-hidden="true"></div>
 		<Header />
 		<aside class="module-rail" aria-label="Portfolio module navigation">
@@ -142,14 +170,21 @@ const modules = [
 
 <style>
 	:global(body) { position: relative; }
-	.hub-splash { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; animation: hub-splash-dismiss 320ms ease 2.55s forwards; }
-	.hub-splash-panel { position: relative; min-width: 0; background: radial-gradient(circle at center, rgba(12, 52, 70, 0.42), transparent 48%), linear-gradient(145deg, #06131f, #02080e 72%); }
+	.hub-splash { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; pointer-events: none; }
+	.hub-splash-video, .hub-splash-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+	.hub-splash-video { z-index: 0; object-fit: cover; object-position: center; background: #02080e; }
+	.hub-splash-shade { z-index: 1; background: radial-gradient(circle at center, rgba(3, 10, 18, 0.12), rgba(2, 8, 14, 0.62)); }
+	.hub-splash-panel { position: relative; z-index: 2; min-width: 0; background: linear-gradient(145deg, rgba(6, 19, 31, 0.68), rgba(2, 8, 14, 0.76) 72%); backdrop-filter: blur(3px) saturate(112%); }
 	.hub-splash-panel::after { position: absolute; top: 0; bottom: 0; width: 1px; content: ''; background: linear-gradient(transparent, var(--prompt), transparent); opacity: 0.75; }
-	.hub-splash-panel-left { transform-origin: left center; border-right: 1px solid rgba(40, 240, 160, 0.24); animation: hub-splash-open-left 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.2s forwards; }
+	.hub-splash-panel-left { transform-origin: left center; border-right: 1px solid rgba(40, 240, 160, 0.24); }
 	.hub-splash-panel-left::after { right: 0; }
-	.hub-splash-panel-right { transform-origin: right center; border-left: 1px solid rgba(40, 240, 160, 0.24); animation: hub-splash-open-right 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.2s forwards; }
+	.hub-splash-panel-right { transform-origin: right center; border-left: 1px solid rgba(40, 240, 160, 0.24); }
 	.hub-splash-panel-right::after { left: 0; }
-	.hub-splash-copy { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 0.45rem; color: var(--text); text-align: center; animation: hub-splash-copy-exit 420ms ease 0.95s forwards; }
+	.hub-splash.is-opening { animation: hub-splash-dismiss 320ms ease 1.1s forwards; }
+	.hub-splash.is-opening .hub-splash-panel-left { animation: hub-splash-open-left 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+	.hub-splash.is-opening .hub-splash-panel-right { animation: hub-splash-open-right 1.1s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+	.hub-splash-copy { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 0.45rem; color: var(--text); text-align: center; }
+	.hub-splash.is-opening .hub-splash-copy { animation: hub-splash-copy-exit 420ms ease forwards; }
 	.hub-splash-kicker { margin: 0; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
 	.hub-splash-copy strong { color: var(--prompt); font: 700 clamp(1.35rem, 3vw, 2.5rem) var(--font-mono); letter-spacing: 0.12em; }
 	.hub-splash-status { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--text-muted); font-size: 0.68rem; letter-spacing: 0.08em; }
