@@ -5,7 +5,7 @@ export const SITE_DESCRIPTION =
 	'Weilai Wang — Senior Software Engineer focused on backend systems, cloud-native engineering, Azure, AWS, Kubernetes, and platform reliability.';
 export const SITE_AUTHOR = 'Weilai Wang';
 export const SITE_TAGLINE =
-	'Backend & Cloud-Native Software Engineer | Azure Solutions Architect Expert | AWS Solutions Architect Professional | Kubernetes (CKAD)';
+	'Senior Software Engineer | Platform Engineering & SRE | AWS Solutions Architect Professional | Azure Solutions Architect Expert | Terraform Professional | CKAD';
 
 export const AWARD_URL = '/certifications/';
 export const AWARD_LABEL = 'Linux Foundation LiFT Scholar';
