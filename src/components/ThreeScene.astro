@@ -7,7 +7,4 @@ interface Props {
 const { variant = 'hub', class: className } = Astro.props;
 ---
 
-<div class:list={['scene-frame', `scene-${variant}`, className]} data-scene-frame>
-	<canvas class="three-scene" data-three-scene={variant} aria-hidden="true"></canvas>
-	<span class="scene-fallback" aria-hidden="true">3D scene unavailable · status HUD online</span>
-</div>
+<div class:list={['scene-frame', `scene-${variant}`, className]} data-scene-frame></div>

@@ -59,6 +59,7 @@ const modules = [
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
+		<div class="hub-page-background" aria-hidden="true"></div>
 		<Header />
 		<main class="hub-main">
 			<section class="hub-hero" aria-labelledby="hub-title">
@@ -120,16 +121,14 @@ const modules = [
 			</section>
 		</main>
 		<Footer />
-		<script type="module" src="/scene.js"></script>
 	</body>
 </html>
 
 <style>
-	:global(.scene-frame) { position: relative; min-height: 300px; overflow: hidden; border: 1px solid rgba(46, 103, 119, 0.34); border-radius: var(--radius-lg); background: radial-gradient(circle at 50% 54%, rgba(12, 111, 111, 0.14), transparent 68%), rgba(2, 11, 19, 0.18); box-shadow: inset 0 0 80px rgba(9, 89, 112, 0.1); }
-	:global(.scene-frame::after) { position: absolute; inset: 0; content: ''; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0 48%, rgba(2, 8, 14, 0.25) 100%); }
-	:global(.scene-frame canvas) { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
-	:global(.scene-fallback) { position: absolute; inset: auto 1rem 1rem; z-index: 3; display: none; padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); background: var(--surface-2); font: 0.7rem var(--font-mono); }
-	:global(.scene-fallback-visible .scene-fallback) { display: block; }
+	:global(body) { position: relative; }
+	.hub-page-background { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: url('/images/portfolio-backgrounds/01-main-hub-bg.png') center top / cover no-repeat; }
+	:global(body > header), :global(body > main), :global(body > footer) { position: relative; z-index: 1; }
+	:global(.scene-frame) { position: relative; min-height: 300px; overflow: hidden; border: 1px solid rgba(46, 103, 119, 0.34); border-radius: var(--radius-lg); background: transparent; box-shadow: inset 0 0 80px rgba(9, 89, 112, 0.1); }
 	.hub-main { max-width: 1380px; }
 	.hub-hero { display: grid; grid-template-columns: minmax(250px, 0.82fr) minmax(390px, 1.38fr) 210px; gap: 1.15rem; align-items: stretch; min-height: 370px; margin-top: 0.4rem; }
 	.hub-copy { display: flex; flex-direction: column; justify-content: center; padding: 1rem 0.2rem; }
@@ -182,6 +181,6 @@ const modules = [
 	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
 	.legacy-links span { color: var(--accent); }
 	@media (max-width: 1100px) { .hub-hero { grid-template-columns: minmax(230px, 0.85fr) minmax(330px, 1.15fr); } .hub-hud { grid-column: 1 / -1; } .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 680px) { .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual, :global(.hub-visual .scene-frame) { height: 290px; min-height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
+	@media (max-width: 680px) { .hub-page-background { background-size: auto 100%; background-position: 58% top; } .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual, :global(.hub-visual .scene-frame) { height: 290px; min-height: 290px; } .hub-hud { grid-column: auto; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
 	@media (prefers-reduced-motion: reduce) { .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>
