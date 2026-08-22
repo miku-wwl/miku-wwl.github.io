@@ -107,7 +107,7 @@ const modules = [
 				video.preload = 'auto';
 				video.load();
 
-				const revealAt = 1.4;
+				const revealAt = 2.5;
 				let revealed = false;
 				const reveal = () => {
 					if (revealed) return;
@@ -122,7 +122,7 @@ const modules = [
 				video.addEventListener('timeupdate', revealWhenReady);
 				video.addEventListener('ended', revealWhenReady, { once: true });
 				video.addEventListener('error', revealWhenReady, { once: true });
-				// Keep the total opening near 2.5s even when the video or page assets load slowly.
+				// Keep the total opening near 3.5s even when the video or page assets load slowly.
 				window.setTimeout(reveal, revealAt * 1000);
 				const playback = video.play();
 				if (playback?.catch) playback.catch(() => {});
