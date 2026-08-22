@@ -17,16 +17,16 @@ const showTrustMarks = Astro.url.pathname === '/';
 
 		{showTrustMarks && (
 			<div class="trust-marks" aria-label="Professional and national marks">
-				<a class="trust-mark" href="https://miku-wwl.github.io/certification-vault/" aria-label="HashiCorp Certified Terraform Authoring and Operations Professional" title="HashiCorp Certified: Terraform Authoring and Operations Professional">
+				<a class="trust-mark" href="/certification-vault/" aria-label="HashiCorp Certified Terraform Authoring and Operations Professional" title="HashiCorp Certified: Terraform Authoring and Operations Professional">
 					<img src="/certifications/terraform-authoring-operations-professional.png" alt="Terraform Professional" loading="eager" decoding="async" />
 				</a>
-				<a class="trust-mark" href="https://miku-wwl.github.io/certification-vault/" aria-label="Microsoft Certified Azure Solutions Architect Expert" title="Microsoft Certified: Azure Solutions Architect Expert">
+				<a class="trust-mark" href="/certification-vault/" aria-label="Microsoft Certified Azure Solutions Architect Expert" title="Microsoft Certified: Azure Solutions Architect Expert">
 					<img src="/certifications/azure-solutions-architect-expert.png" alt="Azure Solutions Architect Expert" loading="eager" decoding="async" />
 				</a>
-				<a class="trust-mark" href="https://miku-wwl.github.io/certification-vault/" aria-label="AWS Certified Solutions Architect Professional" title="AWS Certified Solutions Architect Professional">
+				<a class="trust-mark" href="/certification-vault/" aria-label="AWS Certified Solutions Architect Professional" title="AWS Certified Solutions Architect Professional">
 					<img src="/certifications/aws-solutions-architect-professional.png" alt="AWS Solutions Architect Professional" loading="eager" decoding="async" />
 				</a>
-				<a class="trust-mark" href="https://miku-wwl.github.io/certification-vault/" aria-label="Certified Kubernetes Application Developer" title="Certified Kubernetes Application Developer">
+				<a class="trust-mark" href="/certification-vault/" aria-label="Certified Kubernetes Application Developer" title="Certified Kubernetes Application Developer">
 					<img src="/certifications/ckad.png" alt="Certified Kubernetes Application Developer" loading="eager" decoding="async" />
 				</a>
 				<span class="trust-mark trust-mark-kiwi">
@@ -41,11 +41,11 @@ const showTrustMarks = Astro.url.pathname === '/';
 		)}
 
 		<nav class="module-nav" aria-label="Portfolio modules">
-			<a class="module-nav-link is-active" href="https://miku-wwl.github.io/" aria-current="page">hub</a>
-			<a class="module-nav-link" href="https://miku-wwl.github.io/career-journey/">career</a>
-			<a class="module-nav-link" href="https://miku-wwl.github.io/engineering-projects/">projects</a>
-			<a class="module-nav-link" href="https://miku-wwl.github.io/certification-vault/">certs</a>
-			<a class="module-nav-link" href="https://miku-wwl.github.io/engineering-lab/">lab</a>
+			<a class="module-nav-link is-active" href="/" aria-current="page">hub</a>
+			<a class="module-nav-link" href="/career-journey/">career</a>
+			<a class="module-nav-link" href="/engineering-projects/">projects</a>
+			<a class="module-nav-link" href="/certification-vault/">certs</a>
+			<a class="module-nav-link" href="/engineering-lab/">lab</a>
 		</nav>
 	</div>
 </header>
@@ -104,8 +104,8 @@ const showTrustMarks = Astro.url.pathname === '/';
 	.trust-mark {
 		display: grid;
 		place-items: center;
-		width: 2.2rem;
-		height: 2.2rem;
+		width: clamp(2.8rem, 3.4vw, 3.25rem);
+		height: clamp(2.8rem, 3.4vw, 3.25rem);
 		flex: 0 0 auto;
 		border: 1px solid color-mix(in srgb, var(--border) 78%, var(--prompt));
 		border-radius: 0.5rem;
@@ -118,8 +118,8 @@ const showTrustMarks = Astro.url.pathname === '/';
 		border-color: var(--prompt);
 		box-shadow: 0 0 16px var(--award-soft);
 	}
-	.trust-mark img { width: 1.7rem; height: 1.7rem; object-fit: contain; }
-	.trust-mark svg { width: 1.45rem; height: 1.45rem; }
+	.trust-mark img { width: 2.35rem; height: 2.35rem; object-fit: contain; }
+	.trust-mark svg { width: 2rem; height: 2rem; }
 	.trust-mark-kiwi { color: #57e1ae; }
 	.trust-mark-star { color: #f4f8ff; filter: drop-shadow(0 0 5px rgba(244, 248, 255, 0.35)); }
 	.module-nav {

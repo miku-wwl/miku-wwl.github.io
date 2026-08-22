@@ -70,10 +70,10 @@ button { font: inherit; }
 .brand:hover { color: var(--text); }
 .brand span { color: var(--cyan); }
 .trust-marks { display: inline-flex; align-items: center; justify-content: center; gap: 0.42rem; flex: 1 1 auto; min-width: 0; margin-inline: clamp(0.25rem, 1.5vw, 1.25rem); padding: 0.1rem 0.25rem; }
-.trust-mark { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--border) 78%, var(--cyan)); border-radius: 0.5rem; background: rgba(4, 15, 27, 0.78); box-shadow: 0 0 14px rgba(40, 198, 255, 0.08); transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+.trust-mark { display: grid; place-items: center; width: clamp(2.8rem, 3.4vw, 3.25rem); height: clamp(2.8rem, 3.4vw, 3.25rem); flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--border) 78%, var(--cyan)); border-radius: 0.5rem; background: rgba(4, 15, 27, 0.78); box-shadow: 0 0 14px rgba(40, 198, 255, 0.08); transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
 .trust-mark:hover { transform: translateY(-1px); border-color: var(--text); box-shadow: 0 0 16px rgba(244, 248, 255, 0.16); }
-.trust-mark img { width: 1.7rem; height: 1.7rem; object-fit: contain; }
-.trust-mark svg { width: 1.45rem; height: 1.45rem; }
+.trust-mark img { width: 2.35rem; height: 2.35rem; object-fit: contain; }
+.trust-mark svg { width: 2rem; height: 2rem; }
 .trust-mark-kiwi { color: #57e1ae; }
 .trust-mark-star { color: #f4f8ff; filter: drop-shadow(0 0 5px rgba(244, 248, 255, 0.35)); }
 .module-nav { display: flex; align-items: center; gap: 0.25rem; max-width: 100%; margin-left: auto; overflow-x: auto; padding: 0.15rem; scrollbar-width: none; }

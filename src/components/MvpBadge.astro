@@ -10,10 +10,10 @@ const { variant = 'inline', label = AWARD_LABEL } = Astro.props;
 ---
 
 {variant === 'inline' ? (
-	<a class="chip award" href={AWARD_URL} title="View certifications">
+	<span class="chip award">
 		<span class="dot" aria-hidden="true"></span>
 		{label}
-	</a>
+	</span>
 ) : (
 	<a class="award-block" href={AWARD_URL} title="View certifications">
 		<span class="award-glyph" aria-hidden="true">★</span>

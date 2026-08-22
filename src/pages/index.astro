@@ -9,7 +9,7 @@ const modules = [
 		id: '01',
 		title: 'Career Journey',
 		slug: 'career-journey',
-		href: 'https://miku-wwl.github.io/career-journey/',
+		href: '/career-journey/',
 		command: './open career-journey',
 		copy: 'Trace roles, systems, and learning checkpoints across the engineering path.',
 		meta: 'experience · education · trajectory',
@@ -20,7 +20,7 @@ const modules = [
 		id: '02',
 		title: 'Engineering Projects',
 		slug: 'engineering-projects',
-		href: 'https://miku-wwl.github.io/engineering-projects/',
+		href: '/engineering-projects/',
 		command: './open engineering-projects',
 		copy: 'Explore active and planned work across backend platforms, cloud governance, and SRE.',
 		meta: 'systems · platform · reliability',
@@ -31,7 +31,7 @@ const modules = [
 		id: '03',
 		title: 'Certification Vault',
 		slug: 'certification-vault',
-		href: 'https://miku-wwl.github.io/certification-vault/',
+		href: '/certification-vault/',
 		command: './open certification-vault',
 		copy: 'Open the verified credential archive for cloud, Kubernetes, and platform engineering.',
 		meta: 'azure · aws · kubernetes',
@@ -42,7 +42,7 @@ const modules = [
 		id: '04',
 		title: 'Engineering Lab',
 		slug: 'engineering-lab',
-		href: 'https://miku-wwl.github.io/engineering-lab/',
+		href: '/engineering-lab/',
 		command: './open engineering-lab',
 		copy: 'Enter the playground for interactive demos, games, experiments, and prototypes.',
 		meta: 'experiments · demos · play',
@@ -100,11 +100,11 @@ const modules = [
 		<aside class="module-rail" aria-label="Portfolio module navigation">
 			<span class="module-rail-tab" aria-hidden="true">≡</span>
 			<p class="module-rail-kicker">MODULES</p>
-			<a class="module-rail-link is-active" href="https://miku-wwl.github.io/" aria-current="page"><span>01</span><strong>HUB</strong></a>
-			<a class="module-rail-link" href="https://miku-wwl.github.io/career-journey/"><span>02</span><strong>CAREER</strong></a>
-			<a class="module-rail-link" href="https://miku-wwl.github.io/engineering-projects/"><span>03</span><strong>PROJECTS</strong></a>
-			<a class="module-rail-link" href="https://miku-wwl.github.io/certification-vault/"><span>04</span><strong>CERTS</strong></a>
-			<a class="module-rail-link" href="https://miku-wwl.github.io/engineering-lab/"><span>05</span><strong>LAB</strong></a>
+			<a class="module-rail-link is-active" href="/" aria-current="page"><span>01</span><strong>HUB</strong></a>
+			<a class="module-rail-link" href="/career-journey/"><span>02</span><strong>CAREER</strong></a>
+			<a class="module-rail-link" href="/engineering-projects/"><span>03</span><strong>PROJECTS</strong></a>
+			<a class="module-rail-link" href="/certification-vault/"><span>04</span><strong>CERTS</strong></a>
+			<a class="module-rail-link" href="/engineering-lab/"><span>05</span><strong>LAB</strong></a>
 		</aside>
 		<main class="hub-main">
 			<section class="hub-hero" aria-labelledby="hub-title">
@@ -154,17 +154,23 @@ const modules = [
 				</nav>
 			</section>
 
-			<section class="legacy-section" aria-labelledby="legacy-title">
-				<div class="legacy-window">
-					<div class="legacy-bar"><span class="terminal-dots" aria-hidden="true"><span class="terminal-dot red"></span><span class="terminal-dot yellow"></span><span class="terminal-dot green"></span></span><span>legacy-routes.txt</span></div>
-					<div class="legacy-body">
-						<div><p class="eyebrow">~/miku-wwl $ cat legacy-routes.txt</p><h2 id="legacy-title">The original Astro routes remain online</h2></div>
-						<nav class="legacy-links" aria-label="Original portfolio routes"><a href="/about">about <span>→</span></a><a href="/blog">blog <span>→</span></a><a href="/experience">experience <span>→</span></a><a href="/projects">projects <span>→</span></a><a href="/certifications">certifications <span>→</span></a></nav>
-					</div>
-				</div>
-			</section>
 		</main>
 		<Footer />
+		<script is:inline>
+			(() => {
+				const timeNodes = document.querySelectorAll('[data-live-time]');
+				if (!timeNodes.length) return;
+				const renderTime = () => {
+					const now = new Date();
+					const value = [now.getHours(), now.getMinutes(), now.getSeconds()]
+						.map((part) => String(part).padStart(2, '0'))
+						.join(':');
+					timeNodes.forEach((node) => { node.textContent = value; });
+				};
+				renderTime();
+				window.setInterval(renderTime, 1000);
+			})();
+		</script>
 	</body>
 </html>
 
@@ -253,16 +259,7 @@ const modules = [
 	.module-command { margin: 0.6rem 0 0.75rem; color: var(--module-color); font-size: 0.66rem; }
 	.module-copy { color: var(--text-muted); font-size: 0.78rem; line-height: 1.55; }
 	.module-meta { margin-top: auto; padding-top: 1rem; color: var(--text-faint); font-size: 0.61rem; }
-	.legacy-section { margin-top: 1.75rem; }
-	.legacy-window { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-	.legacy-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); font: 0.7rem var(--font-mono); }
-	.legacy-body { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: 0.95rem 1.1rem 1rem; }
-	.legacy-body h2 { margin: 0; font-size: 0.95rem; }
-	.legacy-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.4rem; }
-	.legacy-links a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.55rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); font: 0.66rem var(--font-mono); text-decoration: none; transition: color 120ms ease, border-color 120ms ease, transform 120ms ease; }
-	.legacy-links a:hover { border-color: var(--accent); color: var(--text); text-decoration: none; transform: translateY(-1px); }
-	.legacy-links span { color: var(--accent); }
 	@media (max-width: 1100px) { .module-rail { top: 4.6rem; left: 50%; width: min(1380px, calc(100% - 2rem)); margin: 0; transform: translate(-50%, calc(-100% + 0.72rem)); grid-template-columns: auto repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 0 0 var(--radius) var(--radius); } .module-rail:hover, .module-rail:focus-within { transform: translate(-50%, 0); } .module-rail-tab { top: auto; right: 50%; bottom: 0; width: 3.2rem; height: 0.72rem; transform: translateX(50%); border-top: 1px solid color-mix(in srgb, var(--rail-accent) 42%, var(--border)); border-left: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); } .module-rail-kicker { margin: 0; border-bottom: 0; } .module-rail-link { justify-content: center; } .hub-hero { grid-template-columns: minmax(230px, 0.85fr) minmax(330px, 1.15fr); } .hub-hud { grid-column: 1 / -1; } .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 680px) { .hub-page-background { background-size: auto 100%; background-position: 58% top; } .module-rail { width: calc(100% - 1rem); display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.4rem; } .module-rail-kicker { flex: 0 0 auto; padding: 0.4rem 0.35rem; } .module-rail-link { flex: 0 0 auto; justify-content: flex-start; } .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual { height: 290px; } .hub-hud { grid-column: auto; } .hud-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); } .hud-row > strong { text-align: right; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading, .legacy-body { display: block; } .launcher-hint { margin-top: 0.4rem; } .legacy-links { justify-content: flex-start; margin-top: 0.9rem; } }
+	@media (max-width: 680px) { .hub-page-background { background-size: auto 100%; background-position: 58% top; } .module-rail { width: calc(100% - 1rem); display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.4rem; } .module-rail-kicker { flex: 0 0 auto; padding: 0.4rem 0.35rem; } .module-rail-link { flex: 0 0 auto; justify-content: flex-start; } .hub-hero { grid-template-columns: 1fr; min-height: auto; } .hub-copy { padding-top: 0; } .hub-copy h1 { white-space: normal; } .hub-visual { height: 290px; } .hub-hud { grid-column: auto; } .hud-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); } .hud-row > strong { text-align: right; } .module-grid { grid-template-columns: 1fr; } .module-card { min-height: 245px; } .launcher-heading { display: block; } .launcher-hint { margin-top: 0.4rem; } }
 	@media (prefers-reduced-motion: reduce) { .hub-splash { display: none; } .module-rail, .module-card, .module-arrow, .module-glow { transition: none; } }
 </style>
