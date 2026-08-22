@@ -76,8 +76,15 @@ const modules = [
 				const splash = document.querySelector('.hub-splash');
 				if (!splash) return;
 
+				const currentUrl = new URL(window.location.href);
+				const skipSplash = currentUrl.searchParams.get('skipSplash') === '1';
+				if (skipSplash) {
+					currentUrl.searchParams.delete('skipSplash');
+					window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+				}
 				const navigation = window.performance?.getEntriesByType?.('navigation')?.[0];
 				const isReload = navigation?.type === 'reload';
+				const isHistoryReturn = navigation?.type === 'back_forward';
 				const isInternalReturn = (() => {
 					try {
 						const referrer = new URL(document.referrer);
@@ -88,7 +95,7 @@ const modules = [
 				})();
 				let splashSeen = false;
 				try { splashSeen = window.sessionStorage.getItem('miku-hub-splash-seen') === '1'; } catch (_) {}
-				const shouldPlay = isReload || (!splashSeen && !isInternalReturn);
+				const shouldPlay = isReload || (!skipSplash && !isHistoryReturn && !splashSeen && !isInternalReturn);
 				try { window.sessionStorage.setItem('miku-hub-splash-seen', '1'); } catch (_) {}
 				if (!shouldPlay) {
 					splash.remove();
