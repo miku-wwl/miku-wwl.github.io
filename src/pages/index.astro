@@ -74,8 +74,31 @@ const modules = [
 		<script is:inline>
 			(() => {
 				const splash = document.querySelector('.hub-splash');
-				const video = splash?.querySelector('.hub-splash-video');
-				if (!splash || !video) return;
+				if (!splash) return;
+
+				const navigation = window.performance?.getEntriesByType?.('navigation')?.[0];
+				const isReload = navigation?.type === 'reload';
+				const isInternalReturn = (() => {
+					try {
+						const referrer = new URL(document.referrer);
+						return referrer.origin === window.location.origin && referrer.pathname !== '/';
+					} catch (_) {
+						return false;
+					}
+				})();
+				let splashSeen = false;
+				try { splashSeen = window.sessionStorage.getItem('miku-hub-splash-seen') === '1'; } catch (_) {}
+				const shouldPlay = isReload || (!splashSeen && !isInternalReturn);
+				try { window.sessionStorage.setItem('miku-hub-splash-seen', '1'); } catch (_) {}
+				if (!shouldPlay) {
+					splash.remove();
+					return;
+				}
+
+				const video = splash.querySelector('.hub-splash-video');
+				if (!video) return;
+				video.preload = 'auto';
+				video.load();
 
 				const revealAt = 1.4;
 				let revealed = false;
